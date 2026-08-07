@@ -196,7 +196,7 @@ end $$;
 ## 5. Phase 3 — Recommendation, Task Gen, Kanban (F-03, F-05, F-06, Day 2)
 
 ### T-301: Recommendation flow integration (F-03)
-- [ ] **T-301** — Recommendation flow integration (F-03)
+- [x] **T-301** — Recommendation flow integration (F-03)
 **Files:** `src/app/api/chat/route.ts` (edit), `src/lib/agents/prompts.ts` (edit).
 **Steps:**
 1. Agronomist prompt gains: extract `land_conditions` (JSON schema per ARCHITECTURE §3.2 — handle `location`, `latitude`/`longitude`, `area_m2` only; YAGNI rest); call `weather_lookup` once per (lat,lon) when location known; call `search_references` when user asks for season/market-relevant crops; output ≥2 crops each with name, "Kecocokan: X%", reasons, planting window, harvest estimate, care notes; end with exact question "Apakah rencana ini sesuai? Saya bisa buatkan jadwal perawatannya."
@@ -205,7 +205,7 @@ end $$;
 **Verification:** chat "saya ingin mulai tanam sayur di balkon 10 m² di Semarang" → recommendation with ≥2 crops, weather in `metadata`; reply "sesuai" → interim message appears; `metadata.plan_confirmed` set in DB.
 
 ### T-302: Task generation integration (F-05)
-- [ ] **T-302** — Task generation integration (F-05)
+- [x] **T-302** — Task generation integration (F-05)
 **Files:** `src/app/api/chat/route.ts` (edit), `src/lib/agents/task-planner.ts` (edit, if needed).
 **Steps:**
 1. On confirmed plan: idempotency check — `select id from tasks where conversation_id = X limit 1`; rows exist → skip generation, use existing tasks.

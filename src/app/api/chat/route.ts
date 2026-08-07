@@ -2,12 +2,17 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { runAgronomist } from "@/lib/agents/agronomist";
+import { runTaskPlanner } from "@/lib/agents/task-planner";
+import { generate_tasks_executor, type GeneratedTask } from "@/lib/agents/tools/task-generator";
 import { STRINGS } from "@/lib/i18n";
 
 /**
  * POST /api/chat — SSE `text/event-stream` chat with the Agronomist agent
  * (T-203, F-02). Session-gated; persists conversation + messages via the
- * service role on completion.
+ * service role on completion. On a short affirmative reply to a previously
+ * persisted `recommendation` message (T-301 step 3), the route marks the plan
+ * confirmed, persists an interim message, and generates the task schedule
+ * (T-302).
  */
 
 function createServiceClient() {
@@ -48,6 +53,47 @@ function extractLandConditions(accumulated: string): LandConditions | null {
     return sanitizeLandConditions(parsed as Record<string, unknown>);
   } catch {
     return null;
+  }
+}
+
+/** Short affirmative reply ("sesuai", "ya", "oke", "lanjutkan", "setuju", ...). */
+const AFFIRMATIVE_WORDS = ["sesuai", "ya", "oke", "ok", "setuju", "lanjutkan", "lanjut", "sip", "mantap"];
+function isAffirmative(message: string): boolean {
+  const normalized = message.toLowerCase().replace(/[.!?,]/g, "");
+  return AFFIRMATIVE_WORDS.some((w) => normalized === w || normalized.startsWith(`${w} `) || normalized.endsWith(` ${w}`) || normalized.includes(` ${w} `));
+}
+
+const TASK_PHASES: GeneratedTask["phase"][] = [
+  "olah_lahan",
+  "semai",
+  "tanam",
+  "penyiraman",
+  "pemupukan",
+  "perawatan",
+  "panen",
+];
+
+/** Today's date key (YYYY-MM-DD) in Asia/Jakarta. */
+function jakartaTodayKey(): string {
+  return new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+function clampDueDate(due: string): string {
+  const today = jakartaTodayKey();
+  return due < today ? today : due;
+}
+
+/** Safety net: build a schedule deterministically when the planner call fails. */
+function fallbackSchedule(crop: string): GeneratedTask[] {
+  const plan = {
+    crops: [crop],
+    planting_window: "mulai hari ini",
+    experience: "beginner",
+  };
+  try {
+    return generate_tasks_executor({ confirmed_plan: plan });
+  } catch {
+    return [];
   }
 }
 
@@ -108,7 +154,7 @@ export async function POST(request: NextRequest) {
   // Load last 20 messages → history for the agent.
   const { data: pastMessages } = await service
     .from("messages")
-    .select("role, content")
+    .select("id, role, content, metadata")
     .eq("conversation_id", conversationId)
     .order("created_at", { ascending: true })
     .limit(HISTORY_LIMIT);
@@ -119,6 +165,14 @@ export async function POST(request: NextRequest) {
       content: m.content,
     })
   );
+
+  // Last assistant message + its metadata → confirmation detection (T-301 step 3).
+  const lastAssistant = [...(pastMessages ?? [])].reverse().find((m) => m.role === "assistant");
+  const prevMetadata =
+    lastAssistant && typeof lastAssistant.metadata === "object" && lastAssistant.metadata !== null
+      ? (lastAssistant.metadata as Record<string, unknown>)
+      : null;
+  const awaitingConfirmation = prevMetadata?.type === "recommendation";
 
   // Resolve context land summary.
   const landId = body.land_id ?? null;
@@ -198,6 +252,137 @@ export async function POST(request: NextRequest) {
       let accumulatedText = "";
 
       try {
+        if (isAffirmative(message) && awaitingConfirmation && lastAssistant) {
+          // T-301 step 3: mark the recommendation as confirmed.
+          await service
+            .from("messages")
+            .update({
+              metadata: { ...(prevMetadata ?? {}), plan_confirmed: true },
+            })
+            .eq("id", lastAssistant.id);
+
+          send({ type: "token", text: STRINGS.chat.taskPlanConfirmed });
+          await service.from("messages").insert({
+            conversation_id: conversationId,
+            role: "assistant",
+            content: STRINGS.chat.taskPlanConfirmed,
+            metadata: { plan_confirmed: true },
+          });
+
+          // T-302: idempotency check — tasks already generated for this conversation?
+          const { data: existingTasks } = await service
+            .from("tasks")
+            .select("id")
+            .eq("conversation_id", conversationId)
+            .limit(1);
+
+          let tasks: GeneratedTask[] = [];
+          if (!existingTasks || existingTasks.length === 0) {
+            try {
+              const planResult = await runTaskPlanner({
+                prompt: message,
+                history,
+                context,
+                supabase: service,
+              });
+              tasks = (planResult.tasks ?? []).filter(
+                (t) =>
+                  typeof t.title === "string" &&
+                  typeof t.due_date === "string" &&
+                  typeof t.phase === "string" &&
+                  TASK_PHASES.includes(t.phase)
+              );
+            } catch (err) {
+              console.error("[api/chat] task planner error:", err);
+            }
+
+            if (tasks.length < 5) {
+              // Partial failure / no output → deterministic fallback (≥5 tasks).
+              const crop = (context.landSummary?.match(/Nama lahan: ([^\n]+)/)?.[1] ??
+                "Tanaman") as string;
+              tasks = fallbackSchedule(crop);
+            }
+
+            tasks = tasks.map((t) => ({
+              ...t,
+              due_date: clampDueDate(t.due_date),
+              position: t.position ?? 0,
+            }));
+
+            const rows = tasks.map((t, index) => ({
+              user_id: user.id,
+              land_id: body.land_id ?? null,
+              conversation_id: conversationId,
+              title: t.title,
+              description: t.description ?? "",
+              phase: t.phase,
+              due_date: t.due_date,
+              position: t.position ?? index,
+              crop: null,
+            }));
+
+            try {
+              const { error: insertError } = await service.from("tasks").insert(rows);
+              if (insertError) {
+                console.error("[api/chat] tasks insert error:", insertError);
+              }
+            } catch (err) {
+              console.error("[api/chat] tasks insert throw:", err);
+            }
+          } else {
+            const { data: persisted } = await service
+              .from("tasks")
+              .select("title, due_date, phase")
+              .eq("conversation_id", conversationId)
+              .order("position", { ascending: true });
+            tasks = (persisted ?? []).map((t) => ({
+              title: t.title,
+              description: "",
+              due_date: t.due_date,
+              phase: t.phase,
+              position: 0,
+            }));
+          }
+
+          const summary =
+            tasks.length > 0
+              ? `${tasks
+                  .map(
+                    (t, i) =>
+                      `${i + 1}. **${t.title}** — ${new Intl.DateTimeFormat("id-ID", {
+                        timeZone: "Asia/Jakarta",
+                        day: "numeric",
+                        month: "short",
+                      }).format(new Date(`${t.due_date}T00:00:00Z`))}`
+                  )
+                  .join("\n")}\n\n${STRINGS.chat.taskSummaryCta}`
+              : STRINGS.chat_errors.aiUnavailable;
+
+          send({ type: "token", text: summary });
+          const summaryMetadata = {
+            type: "task-summary",
+            tasks: tasks.map((t) => ({
+              title: t.title,
+              due_date: t.due_date,
+              phase: t.phase,
+            })),
+          };
+          send({ type: "metadata", data: summaryMetadata });
+          await service.from("messages").insert({
+            conversation_id: conversationId,
+            role: "assistant",
+            content: summary,
+            metadata: summaryMetadata,
+          });
+          await service
+            .from("conversations")
+            .update({ updated_at: new Date().toISOString() })
+            .eq("id", conversationId);
+
+          send({ type: "done" });
+          return;
+        }
+
         const result = await runAgronomist({
           prompt: message,
           history,
@@ -222,12 +407,18 @@ export async function POST(request: NextRequest) {
         send({ type: "metadata", data: metadata });
 
         const content = result.text.trim() || STRINGS.chat_errors.aiUnavailable;
-        const hasMetadata = metadata.toolCalls.length > 0 || metadata.land_conditions !== undefined;
+        const isRecommendation = /Apakah rencana ini sesuai\?/.test(content);
+        const hasMetadata =
+          metadata.toolCalls.length > 0 ||
+          metadata.land_conditions !== undefined ||
+          isRecommendation;
         await service.from("messages").insert({
           conversation_id: conversationId,
           role: "assistant",
           content,
-          metadata: hasMetadata ? metadata : {},
+          metadata: hasMetadata
+            ? { ...metadata, ...(isRecommendation ? { type: "recommendation" } : {}) }
+            : {},
         });
         await service
           .from("conversations")

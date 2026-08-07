@@ -134,6 +134,9 @@ export const STRINGS = {
     severityLabel: (severity: string) => severity.charAt(0).toUpperCase() + severity.slice(1),
     taskSummaryTitle: "Jadwal Tugas Berhasil Dibuat",
     openKanban: "Buka Kanban",
+    taskPlanConfirmed: "Oke, saya buatkan jadwalnya sekarang...",
+    taskSummaryCta:
+      "Cek papan Kanban di dashboard untuk mengelola jadwalmu.",
   },
   riwayat: {
     title: "Riwayat Konsultasi",
