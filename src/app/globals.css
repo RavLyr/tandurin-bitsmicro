@@ -1,0 +1,45 @@
+@import "tailwindcss";
+@config "../../tailwind.config.ts";
+
+/* Scope Tailwind content detection to app source only (v4 auto-scans the whole
+   repo, which would also compile classes from docs/ + screen-ui/). */
+@source not "../../docs/**";
+@source not "../../screen-ui/**";
+@source not "../../scripts/**";
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    overscroll-behavior: none;
+  }
+}
+
+/* Stitch UI hides scrollbars on every scroll container */
+::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar,
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar,
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Motion: pause animations for reduced-motion users (DESIGN §9) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
