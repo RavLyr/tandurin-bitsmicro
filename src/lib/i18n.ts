@@ -74,6 +74,13 @@ export const STRINGS = {
     signupConfirmEmail:
       "Pendaftaran berhasil. Cek kotak masuk email Anda untuk mengonfirmasi akun.",
   },
+  profil_errors: {
+    unauthorized: "Sesi tidak ditemukan. Silakan masuk kembali.",
+    displayName: "Nama tampilan harus 3–60 karakter",
+    reminderHour: "Jam pengingat harus 0–23",
+    noChanges: "Tidak ada perubahan yang dikirim.",
+    notFound: "Profil tidak ditemukan.",
+  },
   dashboard: {
     title: "Papan Tugas",
     searchAria: "Cari tugas",
