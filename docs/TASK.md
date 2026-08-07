@@ -56,7 +56,7 @@ Checklist before T-000: `node -v` → `≥ v20`; `pnpm -v` → installed; all fo
 ## 2. Phase 0 — Project Scaffold & Config
 
 ### T-000: Create Next.js 15 project
-- [ ] **T-000** — Create Next.js 15 project
+- [x] **T-000** — Create Next.js 15 project
 **Files:** whole `src/` tree; `package.json`; `.env.local` (new).
 **Steps:**
 1. Run `pnpm create next-app tandurin-bitsmicro --typescript --tailwind --eslint --app --src-dir --import-alias "@/*"` from a parent dir (project root = this repo root).
@@ -79,7 +79,7 @@ Checklist before T-000: `node -v` → `≥ v20`; `pnpm -v` → installed; all fo
 **Verification:** in Supabase Dashboard, Realtime shows `tasks` in `supabase_realtime` publication; both buckets listed.
 
 ### T-002: Database migrations
-- [ ] **T-002** — Database migrations
+- [x] **T-002** — Database migrations
 **Files:** `supabase/migrations/001_init.sql` (new, sole schema file).
 **Steps:** Write and apply (SQL Editor) one migration containing, in order:
 1. `profiles`, `lands`, `conversations`, `messages`, `tasks`, `task_comments`, `notification_logs`, `weather_cache` — DDL exactly as `docs/DESIGN.md` §6 (UUID PKs, FK→`auth.users`/`profiles`, CHECK constraints, indexes: `conversations_user_updated`, `messages_conv_created`, `tasks_user_status_due`, partial unique `lands_single_active` `(user_id) where is_active`, partial unique `tasks_positions` `(user_id, land_id, status, position)`, `weather_cache` PK `(lat,lon)`, `notification_logs` UNIQUE `(user_id, task_id, type, sent_at)`).
@@ -102,7 +102,7 @@ end $$;
 **Verification:** register a test user via Auth (Dashboard → Authentication → Add user) → SQL: `select * from profiles;` shows one row with `display_name = <email>`; `select * from pg_policies where schemaname='public';` lists policies on all 8 tables.
 
 ### T-003: Middleware & Auth client setup
-- [ ] **T-003** — Middleware & Auth client setup
+- [x] **T-003** — Middleware & Auth client setup
 **Files:** `src/middleware.ts`, `src/lib/supabase/client.ts`, `src/lib/supabase/server.ts`, `src/lib/supabase/middleware.ts`, `src/app/api/auth/logout/route.ts`, `src/app/(auth)/auth/callback/route.ts` (all new).
 **Steps:**
 1. Follow the official `@supabase/ssr` pattern (supabase.com/docs/guides/auth/server-side/nextjs): `middleware.ts` refreshes session and protects routes. Protected: `/dashboard`, `/chat`, `/riwayat`, `/lahan`, `/profil` → unauthenticated 302 `/login?next=<original-path>`. Public: `/login`, `/register`, `/auth/callback`, `/api/cron/reminders` (gated by `CRON_SECRET` in route, not middleware). Authenticated users visiting `/login`/`/register` → 302 `/dashboard`.
@@ -111,7 +111,7 @@ end $$;
 **Verification:** `pnpm build` passes. Manual: visit `/dashboard` logged out → lands on `/login?next=/dashboard`.
 
 ### T-004: .env.example + setup script
-- [ ] **T-004** — .env.example + setup script
+- [x] **T-004** — .env.example + setup script
 **Files:** `.env.example`, `scripts/setup.sh` (new).
 **Steps:**
 1. `.env.example`: every var from ARCHITECTURE §7 table, each with a comment: purpose + whether `NEXT_PUBLIC_`.
@@ -119,7 +119,7 @@ end $$;
 **Verification:** `bash scripts/setup.sh` with full `.env.local` exits 0.
 
 ### T-005: UI Layout & Shared Components
-- [ ] **T-005** — UI Layout & Shared Components
+- [x] **T-005** — UI Layout & Shared Components
 **Files:** `src/app/layout.tsx` (edit), `src/app/globals.css` (edit), `src/components/ui/button.tsx`, `input.tsx`, `card.tsx`, `select.tsx`, `dialog.tsx`, `toast.tsx` (+ `toaster.tsx` + `use-toast.ts`), `skeleton.tsx`, `avatar.tsx`, `badge.tsx`, `src/components/header.tsx`, `src/components/land-switcher.tsx`, `src/components/markdown.tsx`, `src/lib/i18n.ts` (all new).
 **Steps:**
 1. `globals.css`: CSS variables exactly per DESIGN §2 (colors, radius, shadow, font stack); Tailwind theme maps tokens (`primary`, `primary-strong`, `primary-soft`, `primary-deep`, `bg`, `surface`, `earth-50`, `earth-200`, `text`, `text-muted`, `border`, `success`, `warning`, `danger`, `danger-soft`).
@@ -133,7 +133,7 @@ end $$;
 ## 3. Phase 1 — Auth (F-01, Day 1)
 
 ### T-101: Auth pages (F-01)
-- [ ] **T-101** — Auth pages (F-01)
+- [x] **T-101** — Auth pages (F-01)
 **Files:** `src/app/(auth)/login/page.tsx`, `src/app/(auth)/register/page.tsx`, `src/app/(auth)/login/login-form.tsx`, `src/app/(auth)/register/register-form.tsx` (new).
 **Steps:**
 1. Login page per DESIGN §4.1: logo + tagline, "Email" + "Kata Sandi" fields, primary button "Masuk" (loading text "Memproses..."), divider "atau", secondary "Lanjutkan dengan Google" (Google G icon, opens Supabase `signInWithOAuth` popup), link "Belum punya akun? Daftar" → `/register`. On success → `/dashboard`.
@@ -142,7 +142,7 @@ end $$;
 **Verification:** register → auto-login → `/dashboard`; logout → `/login`; duplicate email shows "Email sudah terdaftar."; wrong password shows "Email atau kata sandi salah."; Google OAuth round-trip works (if key configured).
 
 ### T-102: Profile trigger + API (F-01, F-10)
-- [ ] **T-102** — Profile trigger + API (F-01, F-10)
+- [x] **T-102** — Profile trigger + API (F-01, F-10)
 **Files:** `src/app/api/profil/route.ts` (new), `src/app/api/profil/` handlers (GET+PATCH in one file).
 **Steps:**
 1. GET `/api/profil`: session-gate (401 without); read `profiles` row via service role; return `{ ...profile, email }` (email from `auth.admin.getUserById` or `auth.getUser`).
@@ -152,7 +152,7 @@ end $$;
 ## 4. Phase 2 — Chat & Agent Core (F-02, F-03, Day 1–2)
 
 ### T-201: Agent tools module (F-02, F-03) — *parallel with T-202*
-- [ ] **T-201** — Agent tools module (F-02, F-03)
+- [x] **T-201** — Agent tools module (F-02, F-03)
 **Files:** `src/lib/agents/tools/weather.ts`, `src/lib/agents/tools/search.ts`, `src/lib/agents/tools/task-generator.ts`, `src/lib/agents/tools/index.ts` (new).
 **Steps:**
 1. `weather.ts`: export `weather_declaration` (`GeminiFunctionDeclaration`, name `weather_lookup`, params `{ latitude: number, longitude: number }`) and `weather_executor(args, supabase)`: (a) check `weather_cache` for `(lat, lon)` with `fetched_at > now() - interval '30 minutes'` → return cached `payload`; (b) else fetch OpenWeatherMap current weather (`api.openweathermap.org/data/2.5/weather?lat=&lon=&units=metric&lang=id&appid=`) + 5-day forecast; (c) upsert cache `(lat, lon)`; (d) return `{ temp_c, humidity, description, forecast_5d: [...] }`; (e) fetch/parse failure → return `null` (agent must degrade gracefully, F-03 §7: proceed + note "data cuaca tidak tersedia").
@@ -162,7 +162,7 @@ end $$;
 **Verification:** `pnpm build` passes. `node`-level check optional: call `weather_executor` with real key + dummy coords → non-null JSON; second call hits cache (no network error).
 
 ### T-202: Agent orchestration module (F-02, F-03) — *parallel with T-201*
-- [ ] **T-202** — Agent orchestration module (F-02, F-03)
+- [x] **T-202** — Agent orchestration module (F-02, F-03)
 **Files:** `src/lib/agents/orchestrator.ts`, `src/lib/agents/agronomist.ts`, `src/lib/agents/task-planner.ts`, `src/lib/agents/prompts.ts` (new).
 **Steps:**
 1. `prompts.ts`: SYSTEM_PROMPTS — orchestrator (intent routing), agronomist, task-planner. All must instruct: respond in Indonesian; call declared tools when needed; never fabricate tool results — if a tool returns null say "data cuaca tidak tersedia" / omit sources; land_conditions JSON emitted before tool calls; follow output JSON schemas exactly.
@@ -172,7 +172,7 @@ end $$;
 **Verification:** `pnpm build` passes. Smoke test with real key: call `runAgronomist` with "Rekomendasikan tanaman untuk lahan 10 m² di Semarang" → tokens stream, weather tool call fires.
 
 ### T-203: Chat API route (F-02)
-- [ ] **T-203** — Chat API route (F-02)
+- [x] **T-203** — Chat API route (F-02)
 **Files:** `src/app/api/chat/route.ts` (new).
 **Steps:**
 1. `POST /api/chat`: body `{ conversation_id?, land_id?, message, history[] }`. Session-gate first (401). Empty/whitespace `message` → 400.
@@ -183,7 +183,7 @@ end $$;
 **Verification:** logged-in browser or `curl -N -b <session-cookie>`: send "Halo" → SSE events stream; `select * from messages` shows both rows; second message with `conversation_id` appends to same conversation; unauthenticated → 401; empty message → 400.
 
 ### T-204: Chat page UI (F-02)
-- [ ] **T-204** — Chat page UI (F-02)
+- [x] **T-204** — Chat page UI (F-02)
 **Files:** `src/app/(protected)/chat/page.tsx`, `src/components/chat/chat-thread.tsx`, `src/components/chat/chat-composer.tsx`, `src/components/chat/message-bubble.tsx`, `src/components/chat/recommendation-card.tsx`, `src/components/chat/diagnosis-card.tsx`, `src/components/chat/task-summary-card.tsx` (new).
 **Steps:**
 1. Page per DESIGN §4.3: desktop left sidebar (conversation list: title + last message preview + date, search "Cari percakapan..."); main area: header (title, land chip "Lahan: <name>", "Konsultasi Baru"), thread, composer. `/chat?conversation_id=X` loads full thread from DB first (used by T-403).
@@ -247,7 +247,7 @@ end $$;
 **Verification:** upload jpeg → object in `plant-images` under own user_id path; chat with image → diagnosis reply with all 5 sections + disclaimer; follow-up question in same conversation → uses image without re-upload; 6MB file → 400 "Ukuran maksimal 5 MB".
 
 ### T-402: Multi-land CRUD (F-07) — *parallel*
-- [ ] **T-402** — Multi-land CRUD (F-07)
+- [x] **T-402** — Multi-land CRUD (F-07)
 **Files:** `src/app/api/lands/route.ts`, `src/app/api/lands/[id]/route.ts`, `src/app/api/lands/active/[id]/route.ts`, `src/app/(protected)/lahan/page.tsx`, `src/components/lands/land-form.tsx`, `src/components/lands/land-card.tsx` (new).
 **Steps:**
 1. `GET /api/lands` (list, active first), `POST /api/lands` (create; first land auto `is_active = true`; validation per F-07 AC-4..6 with zod → 422 field-level Indonesian messages; name ≤60 required; area 1–100000; budget 0–1e12; lat/lon both-or-neither, ranges ±90/±180; enums `soil|hydroponic|pot|other`, `plenty|limited`, `full|partial|shade`, `beginner|experienced|professional`).
@@ -258,7 +258,7 @@ end $$;
 **Verification:** create 2 lands → first is active; switch → exactly one `is_active=true` in DB; create land with `area_m2: 0` → 422; land with tasks → DELETE 409 with message; delete active land → oldest remaining active.
 
 ### T-403: Consultation history (F-08) — *parallel*
-- [ ] **T-403** — Consultation history (F-08)
+- [x] **T-403** — Consultation history (F-08)
 **Files:** `src/app/api/conversations/route.ts`, `src/app/api/conversations/[id]/route.ts`, `src/app/(protected)/riwayat/page.tsx` (new).
 **Steps:**
 1. `GET /api/conversations?q=`: session-gate; list `updated_at desc` with message count + last message preview (lateral join; do not fetch full threads). Client-side title filter (case-insensitive substring) on `/riwayat` search "Cari riwayat...".

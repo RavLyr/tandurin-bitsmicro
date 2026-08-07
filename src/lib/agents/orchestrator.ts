@@ -107,6 +107,7 @@ export async function runChat({
       id?: string;
     }[] = [];
     let turnText = "";
+    const turnTokens: string[] = [];
 
     for await (const chunk of response) {
       const parts = chunk.candidates?.[0]?.content?.parts ?? [];
@@ -116,15 +117,21 @@ export async function runChat({
           callParts.push(part.functionCall);
         } else if (part.text) {
           turnText += part.text;
-          onToken?.(part.text);
+          turnTokens.push(part.text);
         }
       }
     }
 
     if (callParts.length === 0) {
+      // Final turn: stream its tokens (they are the user-facing answer).
+      for (const token of turnTokens) onToken?.(token);
       text += turnText;
       break;
     }
+
+    // Tool-call turn: never stream its text — the model emits planning
+    // prose ("Decision: Call default_api:*") that is not for the user.
+    // Its turnText is deliberately discarded too (no answer yet).
 
     // Execute tool calls, then feed responses back to the model.
     const functionResponses: FunctionResponse[] = [];

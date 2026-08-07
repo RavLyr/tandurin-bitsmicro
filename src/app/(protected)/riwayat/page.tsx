@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AppHeader } from "@/components/layout/app-header";
 import { BottomNav } from "@/components/layout/bottom-nav";
+import { cleanAssistantContent } from "@/components/chat/chat-thread";
 import { Markdown } from "@/components/markdown";
 import { Badge } from "@/components/ui/badge";
 import { ConfirmDialog } from "@/components/ui/dialog";
@@ -365,7 +366,7 @@ export default function RiwayatPage() {
                           </div>
                           {conv.last_message ? (
                             <p className="line-clamp-2 font-body text-sm text-on-surface-variant">
-                              {conv.last_message}
+                              {cleanAssistantContent(conv.last_message)}
                             </p>
                           ) : null}
                         </button>

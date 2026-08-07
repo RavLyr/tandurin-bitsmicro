@@ -16,7 +16,7 @@
 # misc
 .DS_Store
 *.pem
-
+.playwright-mcp/
 # debug
 npm-debug.log*
 yarn-debug.log*
@@ -37,3 +37,8 @@ next-env.d.ts
 # supabase cli
 supabase/.temp/
 supabase/.branches/
+
+# graphify (generated; rebuild via `graphify update .`)
+/graphify-out/*
+# opencode local config
+.opencode/
