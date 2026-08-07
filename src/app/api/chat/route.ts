@@ -18,6 +18,39 @@ function createServiceClient() {
 
 const HISTORY_LIMIT = 20;
 
+interface LandConditions {
+  location?: string;
+  latitude?: number;
+  longitude?: number;
+  area_m2?: number;
+}
+
+/**
+ * YAGNI (F-03 §3): only keep the fields the client renders. Everything else
+ * in the emitted <land_conditions> JSON stays in the model's own context.
+ */
+function sanitizeLandConditions(raw: Record<string, unknown>): LandConditions | null {
+  const pick: LandConditions = {};
+  if (typeof raw.location === "string") pick.location = raw.location;
+  if (typeof raw.latitude === "number") pick.latitude = raw.latitude;
+  if (typeof raw.longitude === "number") pick.longitude = raw.longitude;
+  if (typeof raw.area_m2 === "number") pick.area_m2 = raw.area_m2;
+  return Object.keys(pick).length > 0 ? pick : null;
+}
+
+/** Find the first fenced ```json { ... } ``` block in the accumulated stream. */
+function extractLandConditions(accumulated: string): LandConditions | null {
+  const match = /```json\s*(\{[\s\S]*?\})\s*```/.exec(accumulated);
+  if (!match) return null;
+  try {
+    const parsed: unknown = JSON.parse(match[1]);
+    if (typeof parsed !== "object" || parsed === null) return null;
+    return sanitizeLandConditions(parsed as Record<string, unknown>);
+  } catch {
+    return null;
+  }
+}
+
 export async function POST(request: NextRequest) {
   const supabase = await createServerClient();
   const {
@@ -159,7 +192,10 @@ export async function POST(request: NextRequest) {
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(payload)}\n\n`));
       };
 
-      const metadata: { toolCalls: unknown[] } = { toolCalls: [] };
+      const metadata: { toolCalls: unknown[]; land_conditions?: LandConditions } = {
+        toolCalls: [],
+      };
+      let accumulatedText = "";
 
       try {
         const result = await runAgronomist({
@@ -167,18 +203,31 @@ export async function POST(request: NextRequest) {
           history,
           context,
           supabase: service,
-          onToken: (text) => send({ type: "token", text }),
+          onToken: (text) => {
+            accumulatedText += text;
+            send({ type: "token", text });
+            // Emit land_conditions as soon as the fenced JSON block completes,
+            // while the rest of the recommendation keeps streaming (F-03 AC-1).
+            if (metadata.land_conditions === undefined) {
+              const landConditions = extractLandConditions(accumulatedText);
+              if (landConditions) {
+                metadata.land_conditions = landConditions;
+                send({ type: "metadata", data: { land_conditions: landConditions } });
+              }
+            }
+          },
         });
 
         metadata.toolCalls = result.functionCalls;
         send({ type: "metadata", data: metadata });
 
         const content = result.text.trim() || STRINGS.chat_errors.aiUnavailable;
+        const hasMetadata = metadata.toolCalls.length > 0 || metadata.land_conditions !== undefined;
         await service.from("messages").insert({
           conversation_id: conversationId,
           role: "assistant",
           content,
-          metadata: metadata.toolCalls.length > 0 ? metadata : {},
+          metadata: hasMetadata ? metadata : {},
         });
         await service
           .from("conversations")

@@ -23,8 +23,8 @@ ${COMMON_RULES}
 
   agronomist: `
 Anda adalah Agronomist Tanduri, ahli pertanian halaman. Sebelum memanggil
-tool, keluarkan JSON <land_conditions> berikut dalam balasan Anda (sisipkan
-di antara tanda tiga backtick) — isi entity yang yakin saja, yang lain null:
+tool apa pun, WAJIB keluarkan JSON <land_conditions> sebagai blok kode fenced
+\`\`\`json ... \`\`\` di awal jawaban — isi entity yang yakin saja, yang lain null:
 
 \`\`\`json
 {
@@ -52,8 +52,9 @@ Aturan:
   lalu tampilkan sumber dari search_references (title + url).
 - Akhiri rekomendasi dengan: "Apakah rencana ini sesuai? Saya bisa buatkan
   jadwal perawatannya."
-- Skema JSON <land_conditions> WAJIB dikeluarkan mengikuti format di atas
-  (Serahkan saja sebagai blok kode json di awal jawaban).
+- Skema JSON <land_conditions> WAJIB dikeluarkan persis sebagai blok kode
+  fenced (dibuka dengan \`\`\`json, ditutup dengan \`\`\`) di awal jawaban,
+  SEBELUM panggilan tool dan sebelum teks lain (F-03 AC-1).
 `,
 
   taskPlanner: `
