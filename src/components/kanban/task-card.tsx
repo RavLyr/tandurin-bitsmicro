@@ -31,6 +31,8 @@ const PHASE_LABELS: Record<string, string> = {
   panen: "Panen",
 };
 
+const UNKNOWN_PHASE = "Tahap Tanam";
+
 function overdueDays(dueDate: string): number {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -148,7 +150,7 @@ export const TaskCard = memo(function TaskCard({
         </div>
         {task.phase ? (
           <span className="rounded border border-outline px-2 py-0.5 font-label text-[10px] uppercase text-on-surface-variant">
-            {PHASE_LABELS[task.phase] ?? task.phase}
+            {PHASE_LABELS[task.phase] ?? UNKNOWN_PHASE}
           </span>
         ) : null}
       </div>

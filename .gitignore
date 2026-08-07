@@ -17,6 +17,8 @@
 .DS_Store
 *.pem
 .playwright-mcp/
+.omo/
+bun.lock
 # debug
 npm-debug.log*
 yarn-debug.log*

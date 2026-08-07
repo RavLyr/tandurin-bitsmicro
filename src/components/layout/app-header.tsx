@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Logo } from "@/components/layout/logo";
 import { STRINGS } from "@/lib/i18n";
 import { LandSwitcher } from "@/components/land-switcher";
+import { Onboarding, openOnboarding } from "@/components/onboarding/onboarding";
 
 export type ProtectedPathKey =
   | "dashboard"
@@ -88,6 +89,17 @@ export function AppHeader({ activePath }: { activePath?: ProtectedPathKey }) {
               </Link>
             ))}
           </div>
+          <button
+            type="button"
+            aria-label={STRINGS.header.guideAria}
+            title={STRINGS.header.guideAria}
+            onClick={openOnboarding}
+            className="flex h-8 w-8 items-center justify-center rounded-full text-on-surface-variant transition-colors hover:bg-surface-container hover:text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
+          >
+            <span className="material-symbols-outlined text-lg" aria-hidden="true">
+              help
+            </span>
+          </button>
           <Link
             href="/profil"
             aria-label={STRINGS.header.profilAria}
@@ -108,6 +120,7 @@ export function AppHeader({ activePath }: { activePath?: ProtectedPathKey }) {
           </Link>
         </nav>
       </div>
+      <Onboarding />
     </header>
   );
 }

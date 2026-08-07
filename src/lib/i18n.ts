@@ -33,6 +33,7 @@ export const STRINGS = {
     landSwitcherManage: "Kelola Lahan",
     landSwitcherCheckAria: "Lahan aktif",
     chatCta: "Chat Tanduri",
+    guideAria: "Lihat panduan singkat",
     navAria: "Navigasi utama",
     homeAria: "Tanduri — Papan Tugas",
     profilAria: "Profil",
@@ -124,7 +125,7 @@ export const STRINGS = {
     addTask: "Tambah Tugas",
     ctaTitle: "Mulai Konsultasi",
     ctaBody:
-      "Lahan pertama tidak dibuat. Ceritakan kondisi lahannya dan asisten Tanduri akan menyusun jadwal tugas tanammu secara otomatis.",
+      "Belum ada jadwal tanam. Langkah pertama: tambahkan lahanmu, lalu ceritakan tujuan berkebunmu di chat. Tanduri akan menyusun jadwal tugasnya secara otomatis.",
     ctaLink: "Mulai Konsultasi",
   },
   chat: {
@@ -139,7 +140,7 @@ export const STRINGS = {
     newChatAria: "Konsultasi Baru",
     welcomeTitle: "Selamat datang di Tanduri!",
     welcomeBody:
-      "Tanyakan tentang kondisi lahan, penyakit, atau rekomendasi tanaman. Mulai dari salah satu contoh berikut:",
+      "Tanduri adalah asisten berkebun pribadimu. Ceritakan kondisi lahan, masalah tanaman, atau tujuan menanammu — kami beri saran sesuai kondisi lahammu. Mulai dari salah satu contoh berikut:",
     examplePrompts: [
       "Rekomendasikan tanaman untuk lahan 10 m² di Semarang",
       "Tanaman cabai saya layu, kenapa?",
@@ -162,10 +163,10 @@ export const STRINGS = {
       "Ini adalah perkiraan AI, bukan diagnosis laboratorium. Jika gejala memburuk, konsultasikan dengan ahli.",
     severityLabel: (severity: string) => severity.charAt(0).toUpperCase() + severity.slice(1),
     taskSummaryTitle: "Jadwal Tugas Berhasil Dibuat",
-    openKanban: "Buka Kanban",
+    openKanban: "Buka Papan Tugas",
     taskPlanConfirmed: "Oke, saya buatkan jadwalnya sekarang...",
     taskSummaryCta:
-      "Cek papan Kanban di dashboard untuk mengelola jadwalmu.",
+      "Cek papan tugas di dashboard untuk mengelola jadwalmu.",
   },
   upload: {
     formatUnsupported: "Format gambar tidak didukung",
@@ -370,5 +371,213 @@ export const STRINGS = {
     commentsAria: "Komentar tugas",
     editDescriptionAria: "Ubah deskripsi",
     deleteAria: "Hapus tugas",
+  },
+  /* Public landing page (/) — copy mirrors the actual app features (PRD F-01..F-10). */
+  landing: {
+    skipLink: "Lewati ke konten utama",
+    header: {
+      navAria: "Navigasi utama",
+      nav: [
+        { href: "#fitur", label: "Fitur" },
+        { href: "#cara-kerja", label: "Cara Kerja" },
+        { href: "#faq", label: "FAQ" },
+      ],
+      signIn: "Masuk",
+      signUp: "Daftar",
+      openDashboard: "Buka Dashboard",
+      openDashboardAria: "Buka dashboard Tanduri",
+    },
+    hero: {
+      eyebrow: "Solusi Tani Zaman Saiki",
+      title: "Asisten tanam pribadi yang mengerti lahammu",
+      body: "Tanduri menganalisis lokasi, luas lahan, media tanam, air, cahaya, dan anggaranmu — lalu merekomendasikan komoditas yang cocok serta mengubah rencanamu menjadi jadwal tugas harian di papan tugas.",
+      ctaPrimary: "Mulai Konsultasi",
+      ctaPrimaryAria: "Mulai konsultasi dengan Tanduri",
+      ctaSecondary: "Lihat cara kerja",
+      trust:
+        "Gratis untuk periode demo · Dirancang untuk pemula · Respons dalam Bahasa Indonesia",
+    },
+    mock: {
+      aria: "Pratinjau aplikasi Tanduri: percakapan konsultasi dengan rekomendasi tanaman",
+      header: "Tanduri AI",
+      landChip: "Lahan: Balkon",
+      userBubble: "Saya ingin mulai tanam sayur di balkon 10 m²",
+      assistantLabel: "Rekomendasi Tanaman",
+      crop: "Cabai Rawit",
+      match: "Kecocokan: 87%",
+      reason: "Cocok dengan cahaya penuh dan media pot di balkonmu.",
+      confirmQuestion:
+        "Apakah rencana ini sesuai? Saya bisa buatkan jadwal perawatannya.",
+      confirm: "Sesuai",
+    },
+    problem: {
+      eyebrow: "Masalah",
+      title: "Berkebun gagal bukan karena kamu",
+      body: "Informasi online yang ada bersifat umum, terpecah, dan tidak praktis. Tanduri menggantinya dengan panduan personal berdasarkan kondisi lahammu — bukan tebakan.",
+      stats: [
+        {
+          value: "67%",
+          label: "pekebun pemula menyebut dirinya \"pembunuh tanaman\"",
+        },
+        { value: "48%", label: "kegagalan disebabkan penyiraman berlebihan" },
+        { value: "37%", label: "kegagalan karena cahaya yang salah" },
+        { value: "<15%", label: "adopsi berkebun jangka panjang di perkotaan" },
+      ],
+    },
+    howItWorks: {
+      eyebrow: "Cara Kerja",
+      title: "Dari lahan kosong ke jadwal tanam siap jalan",
+      body: "Empat langkah sederhana, mengikuti alur konsultasi asli di dalam aplikasi.",
+      steps: [
+        {
+          title: "Daftar & buat profil lahan",
+          body: "Daftar gratis, lalu isi kondisi lahammu — lokasi, luas, media tanam, air, cahaya, dan anggaran.",
+        },
+        {
+          title: "Konsultasi dengan AI",
+          body: "Ceritakan tujuanmu di chat. Tanduri menganalisis kondisi mikro lahammu, mengecek cuaca, lalu merekomendasikan komoditas dengan tingkat kecocokan.",
+        },
+        {
+          title: "Setujui rencananya",
+          body: "Tinjau rekomendasi, alasan, dan jendela tanam. Klik \"Sesuai\" bila cocok dengan kebutuhanmu.",
+        },
+        {
+          title: "Jalankan jadwal di Papan Tugas",
+          body: "Rencanamu otomatis menjadi minimal 5 tugas harian di papan tugas realtime — seret kartu, tandai selesai, dan terima pengingat email.",
+        },
+      ],
+    },
+    features: {
+      eyebrow: "Fitur",
+      title: "Semua yang kamu butuhkan untuk mulai, di satu tempat",
+      body: "Fitur-fitur berikut sudah berjalan di dalam aplikasi Tanduri.",
+      items: [
+        {
+          icon: "forum",
+          title: "Konsultasi Chat AI",
+          body: "Tanya apa pun tentang lahammu dalam Bahasa Indonesia. Respons streaming dengan konteks lahammu.",
+        },
+        {
+          icon: "eco",
+          title: "Rekomendasi Komoditas",
+          body: "Tanaman yang cocok dengan persentase kecocokan, berdasarkan lokasi, luas lahan, media, air, cahaya, dan anggaran.",
+        },
+        {
+          icon: "photo_camera",
+          title: "Diagnosa Foto",
+          body: "Foto tanaman yang sakit — AI memberi perkiraan diagnosis, penyebab, dan tindakan segera untuk pemula.",
+        },
+        {
+          icon: "calendar_month",
+          title: "Jadwal Tugas Otomatis",
+          body: "Rencana yang disetujui langsung menjadi jadwal harian lengkap dengan tenggat waktu.",
+        },
+        {
+          icon: "view_kanban",
+          title: "Papan Tugas Realtime",
+          body: "Kelola tugas di kolom Belum Dikerjakan, Sedang Dikerjakan, dan Selesai. Sinkron realtime di semua perangkat.",
+        },
+        {
+          icon: "notifications_active",
+          title: "Multi-Lahan & Pengingat",
+          body: "Kelola beberapa lahan dalam satu akun, lengkap dengan pengingat email harian pukul 07:00 WIB.",
+        },
+      ],
+    },
+    kanbanPreview: {
+      eyebrow: "Papan Tugas",
+      title: "Jadwalmu terorganisir, sinkron realtime",
+      body: "Setiap rencana yang disetujui otomatis menjadi tugas di papan tugas — lengkap dengan tenggat, fase, dan status. Kartu terlambat ditandai jelas agar tidak terlewat.",
+      columns: [
+        {
+          name: "Belum Dikerjakan",
+          tasks: [
+            { title: "Siapkan media tanam" },
+            { title: "Pindahkan bibit ke pot", overdue: "Terlambat 2 hari" },
+          ],
+        },
+        {
+          name: "Sedang Dikerjakan",
+          tasks: [{ title: "Penyiraman pagi" }],
+        },
+        {
+          name: "Selesai",
+          tasks: [{ title: "Olah lahan & semai" }],
+        },
+      ],
+    },
+    faq: {
+      eyebrow: "FAQ",
+      title: "Pertanyaan yang sering diajukan",
+      items: [
+        {
+          q: "Apakah Tanduri gratis?",
+          a: "Ya. Tanduri gratis digunakan pada periode demo Bitsmikro Innovative Vibecode 2026. Daftar dan langsung konsultasi.",
+        },
+        {
+          q: "Apakah saya perlu pengalaman bertani?",
+          a: "Tidak. Tanduri dirancang untuk pemula: bahasa sederhana, langkah harian yang praktis, dan fokus mencegah kegagalan seperti penyiraman berlebihan dan cahaya yang salah.",
+        },
+        {
+          q: "Untuk siapa Tanduri dibuat?",
+          a: "Pekebun pemula dan urban dengan lahan terbatas, serta petani profesional yang membutuhkan analisis agronomis, efisiensi biaya, dan proyeksi panen.",
+        },
+        {
+          q: "Bagaimana data lahan saya digunakan?",
+          a: "Data lahammu hanya digunakan untuk menghasilkan rekomendasi yang akurat. Seluruh data dilindungi Row Level Security — hanya kamu yang bisa mengaksesnya.",
+        },
+        {
+          q: "Bisakah mendiagnosa tanaman yang sakit?",
+          a: "Ya. Unggah foto tanamanmu dan AI memberikan perkiraan diagnosis (bukan diagnosis laboratorium) lengkap dengan tindakan segera. Bila gejala memburuk, konsultasikan dengan ahli.",
+        },
+        {
+          q: "Apakah bisa untuk lahan besar?",
+          a: "Bisa. Dari polybag, kebun atap, hingga lahan komersial — cukup isi luas lahan dan anggaranmu.",
+        },
+      ],
+    },
+    finalCta: {
+      title: "Mulai tanam dengan percaya diri",
+      body: "Daftar gratis, ceritakan kondisi lahammu, dan biarkan Tanduri menyusun jadwal tanammu hari ini.",
+      cta: "Mulai Gratis",
+    },
+    footer: {
+      credit:
+        "Dibuat oleh Satria Firm Vibers — Universitas Diponegoro untuk Bitsmikro Innovative Vibecode 2026",
+      signIn: "Masuk",
+      signUp: "Daftar",
+    },
+  },
+  onboarding: {
+    ariaLabel: "Panduan singkat Tanduri",
+    skip: "Lewati",
+    next: "Lanjut",
+    prev: "Kembali",
+    start: "Mulai berkebun",
+    closeAria: "Tutup panduan",
+    stepLabel: (index: number, total: number) =>
+      `Langkah ${index + 1} dari ${total}`,
+    steps: [
+      {
+        icon: "eco",
+        title: "Selamat datang di Tanduri 🌱",
+        body: "Tanduri adalah asisten berkebun pribadi. Ceritakan kondisimu dan kami bantu dari lahan kosong sampai jadwal tanam siap jalan — tanpa perlu pengalaman.",
+      },
+      {
+        icon: "landscape",
+        title: "1. Tambahkan lahanmu",
+        body: "Lahan adalah tempat menanammu — pekarangan, balkon, atau pot. Isi ukuran, cahaya, air, dan media tanamnya supaya saran Tanduri sesuai kondisimu.",
+      },
+      {
+        icon: "forum",
+        title: "2. Konsultasi di chat",
+        body: "Ceritakan tujuanmu, misalnya \"saya ingin mulai tanam sayur di balkon\". Tanduri cek cuaca lalu rekomendasikan tanaman yang cocok beserta caranya.",
+      },
+      {
+        icon: "view_kanban",
+        title: "3. Kelola di Papan Tugas",
+        body: "Setuju dengan rekomendasinya? Jadwal tugasnya muncul otomatis di Papan Tugas. Seret kartu antar kolom dan tandai selesai saat selesai dikerjakan.",
+      },
+    ],
   },
 } as const;
