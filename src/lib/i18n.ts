@@ -3,6 +3,12 @@
  * values are the Indonesian strings rendered to users. */
 
 export const STRINGS = {
+  common: {
+    cancel: "Batal",
+    close: "Tutup",
+    delete: "Hapus",
+    loading: "Memuat...",
+  },
   brand: {
     name: "Tanduri.",
     tagline: "Solusi Tani Zaman Saiki",
@@ -13,6 +19,11 @@ export const STRINGS = {
   },
   header: {
     landSwitcher: "Pilih Lahan",
+    landSwitcherAria: "Pilih lahan aktif",
+    landSwitcherLoading: "Memuat lahan...",
+    landSwitcherEmpty: "Belum ada lahan",
+    landSwitcherManage: "Kelola Lahan",
+    landSwitcherCheckAria: "Lahan aktif",
     chatCta: "Chat Tanduri",
     navAria: "Navigasi utama",
     homeAria: "Tanduri — Papan Tugas",

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Space_Mono } from "next/font/google";
 import "./globals.css";
 import { STRINGS } from "@/lib/i18n";
+import { Toaster } from "@/components/ui/toaster";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   variable: "--font-plus-jakarta-sans",
@@ -46,7 +47,7 @@ export default function RootLayout({
       <body
         className={`${plusJakartaSans.variable} ${spaceMono.variable} bg-bg font-body text-on-surface antialiased`}
       >
-        {children}
+        <Toaster>{children}</Toaster>
       </body>
     </html>
   );
