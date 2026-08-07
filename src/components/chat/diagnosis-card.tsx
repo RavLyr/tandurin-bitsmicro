@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { STRINGS } from "@/lib/i18n";
+import { createClient } from "@/lib/supabase/client";
 
 interface DiagnosisRow {
   label?: unknown;
@@ -15,33 +17,61 @@ const SEVERITY_BADGES: Record<string, string> = {
 };
 
 /**
- * Diagnosis card (F-04, metadata.type "diagnosis"): top-likelihood condition
- * with severity badge and a numbered "Tindakan Segera" action list, per
- * DESIGN §4.3 diagnosis card from the Stitch screen.
+ * Diagnosis card (F-04, metadata.type "diagnosis"): image preview, top
+ * likelihood with severity badge, numbered "Tindakan Segera" actions, and the
+ * mandatory AI-estimate disclaimer (F-04 §6 point 6).
  */
-export function DiagnosisCard({ data }: { data: unknown }) {
+export function DiagnosisCard({ data, imagePath }: { data: unknown; imagePath?: string | null }) {
   const rows = (Array.isArray(data) ? data : []) as DiagnosisRow[];
-  if (rows.length === 0) return null;
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!imagePath) return;
+    const supabase = createClient();
+    void supabase.storage
+      .from("plant-images")
+      .createSignedUrl(imagePath, 3600)
+      .then(({ data }) => {
+        if (data?.signedUrl) setImageUrl(data.signedUrl);
+      })
+      .catch(() => setImageUrl(null));
+  }, [imagePath]);
 
   const top = rows[0];
-  const label = typeof top.label === "string" ? top.label : null;
-  const severity = typeof top.severity === "string" ? top.severity : null;
-  const actions = Array.isArray(top.actions)
+  const label = typeof top?.label === "string" ? top.label : null;
+  const severity = typeof top?.severity === "string" ? top.severity : null;
+  const actions = Array.isArray(top?.actions)
     ? top.actions.filter((a): a is string => typeof a === "string")
     : [];
 
-  if (!label && actions.length === 0) return null;
-
   return (
     <section className="rounded-lg border border-outline-variant bg-surface p-4">
-      <div className="flex items-center justify-between gap-3">
-        <h3 className="font-headline text-sm font-semibold text-on-surface">{label}</h3>
-        {severity && SEVERITY_BADGES[severity] ? (
-          <span className={`rounded-full px-2 py-0.5 font-label text-xs ${SEVERITY_BADGES[severity]}`}>
-            {STRINGS.chat.severityLabel(severity)}
-          </span>
-        ) : null}
-      </div>
+      {imagePath ? (
+        <div className="mb-3 overflow-hidden rounded-md border border-outline-variant">
+          {imageUrl ? (
+            /* eslint-disable-next-line @next/next/no-img-element -- signed URL image; cannot use next/image with dynamic signed URLs. */
+            <img
+              src={imageUrl}
+              alt={STRINGS.riwayat.imageAlt}
+              className="max-h-48 w-full object-cover"
+            />
+          ) : null}
+        </div>
+      ) : null}
+
+      {label || actions.length > 0 ? (
+        <div className="flex items-center justify-between gap-3">
+          {label ? (
+            <h3 className="font-headline text-sm font-semibold text-on-surface">{label}</h3>
+          ) : null}
+          {severity && SEVERITY_BADGES[severity] ? (
+            <span className={`rounded-full px-2 py-0.5 font-label text-xs ${SEVERITY_BADGES[severity]}`}>
+              {STRINGS.chat.severityLabel(severity)}
+            </span>
+          ) : null}
+        </div>
+      ) : null}
+
       {actions.length > 0 ? (
         <div className="mt-3">
           <h4 className="font-label text-xs uppercase tracking-wide text-on-surface-variant">
@@ -56,6 +86,10 @@ export function DiagnosisCard({ data }: { data: unknown }) {
           </ol>
         </div>
       ) : null}
+
+      <p className="mt-3 border-t border-outline-variant pt-2 font-label text-[11px] leading-relaxed text-on-surface-variant">
+        {STRINGS.chat.diagnosisDisclaimer}
+      </p>
     </section>
   );
 }

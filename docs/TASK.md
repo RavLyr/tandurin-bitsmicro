@@ -237,7 +237,7 @@ end $$;
 ## 6. Phase 4 — Remaining Features & Deploy (F-04, F-07, F-08, F-09, F-10, Day 2–3)
 
 ### T-401: Photo diagnosis (F-04) — *parallel*
-- [ ] **T-401** — Photo diagnosis (F-04)
+- [x] **T-401** — Photo diagnosis (F-04)
 **Files:** `src/app/api/upload/route.ts` (new), `src/lib/agents/agronomist.ts` + `src/app/api/chat/route.ts` (edit), `src/components/chat/diagnosis-card.tsx` (edit).
 **Steps:**
 1. `POST /api/upload` multipart (field `image`): session-gate; validate type (`image/jpeg|png|webp`) → 400 "Format gambar tidak didukung"; size ≤5MB → 400 "Ukuran maksimal 5 MB"; upload to `plant-images` path `{user_id}/{timestamp}-{slug}.jpg` (slug from original name, sanitized); return `{ path }` (no public URL — private bucket).

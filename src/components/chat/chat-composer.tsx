@@ -2,29 +2,92 @@
 
 import { useRef, useState } from "react";
 import { STRINGS } from "@/lib/i18n";
+import { toast } from "@/components/ui/use-toast";
 
 /**
- * Chat composer (F-02 §4.3): textarea (auto-grow), attach button (image
- * preview), and a send button disabled while streaming. Enter sends, Shift+Enter
- * adds a newline.
+ * Chat composer (F-02 §4.3 + F-04): textarea (auto-grow), image attach
+ * (client-side compress ≤1024px/≤5MB, preview, upload to /api/upload on send),
+ * and a send button disabled while streaming. Enter sends, Shift+Enter newline.
  */
 export function ChatComposer({
   disabled,
   onSend,
 }: {
   disabled: boolean;
-  onSend: (text: string) => void;
+  onSend: (text: string, imagePath?: string) => void;
 }) {
   const [value, setValue] = useState("");
   const [preview, setPreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement | null>(null);
+  const uploadedPathRef = useRef<string | null>(null);
 
   const submit = () => {
     const text = value.trim();
-    if (!text || disabled) return;
-    onSend(text);
+    if (!text || disabled || uploading) return;
+    onSend(text, uploadedPathRef.current ?? undefined);
     setValue("");
     setPreview(null);
+    uploadedPathRef.current = null;
+    if (fileRef.current) fileRef.current.value = "";
+  };
+
+  const handleFile = async (file: File) => {
+    // F-04 §6: compress client-side via canvas (≤1024px long edge) before upload.
+    const compressed = await new Promise<Blob>((resolve) => {
+      const objectUrl = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.min(1, 1024 / Math.max(img.width, img.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          resolve(file);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(objectUrl);
+        canvas.toBlob(
+          (blob) => resolve(blob ?? file),
+          "image/jpeg",
+          0.8
+        );
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        resolve(file);
+      };
+      img.src = objectUrl;
+    });
+
+    const resized = new File([compressed], "upload.jpg", { type: "image/jpeg" });
+    if (resized.size > 5 * 1024 * 1024) {
+      toast(STRINGS.upload.sizeTooLarge, "danger");
+      return;
+    }
+
+    setUploading(true);
+    setPreview(URL.createObjectURL(resized));
+    try {
+      const form = new FormData();
+      form.append("image", resized);
+      const res = await fetch("/api/upload", { method: "POST", body: form });
+      const json = (await res.json().catch(() => ({}))) as { path?: string; error?: string };
+      if (!res.ok || !json.path) {
+        setPreview(null);
+        toast(json?.error ?? STRINGS.upload.uploadFailed, "danger");
+        return;
+      }
+      uploadedPathRef.current = json.path;
+    } catch {
+      setPreview(null);
+      toast(STRINGS.upload.uploadFailed, "danger");
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
   };
 
   return (
@@ -64,9 +127,7 @@ export function ChatComposer({
             onChange={(event) => {
               const file = event.target.files?.[0];
               if (!file) return;
-              const reader = new FileReader();
-              reader.onload = () => setPreview(String(reader.result));
-              reader.readAsDataURL(file);
+              void handleFile(file);
             }}
           />
           <button
@@ -96,7 +157,7 @@ export function ChatComposer({
           <button
             type="button"
             aria-label={STRINGS.chat.sendAria}
-            disabled={disabled || !value.trim()}
+            disabled={disabled || !value.trim() || uploading}
             onClick={submit}
             className="flex flex-shrink-0 items-center justify-center rounded border border-on-surface bg-on-surface p-3 text-surface-container-lowest transition-colors hover:bg-surface-variant hover:text-on-surface focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-40 disabled:hover:bg-on-surface disabled:hover:text-surface-container-lowest"
           >

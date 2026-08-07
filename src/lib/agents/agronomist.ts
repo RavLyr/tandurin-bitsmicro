@@ -15,6 +15,9 @@ export interface RunAgronomistParams {
   context?: AgentContext;
   onToken?: (text: string) => void;
   supabase?: unknown;
+  image?: { mimeType: string; data: string } | null;
+  /** When true, use the diagnosis system prompt (T-401, F-04). */
+  diagnose?: boolean;
 }
 
 export interface RunAgronomistResult {
@@ -40,15 +43,18 @@ export async function runAgronomist({
   context = {},
   onToken,
   supabase,
+  image = null,
+  diagnose = false,
 }: RunAgronomistParams): Promise<RunAgronomistResult> {
   const { text, functionCalls } = await runChat({
     prompt,
     history,
     tools: agronomistTools,
     context,
-    systemInstruction: SYSTEM_PROMPTS.agronomist,
+    systemInstruction: diagnose ? SYSTEM_PROMPTS.diagnosis : SYSTEM_PROMPTS.agronomist,
     onToken,
     supabase,
+    image,
   });
 
   return { text, functionCalls };

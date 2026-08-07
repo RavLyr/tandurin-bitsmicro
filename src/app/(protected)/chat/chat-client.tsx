@@ -129,10 +129,13 @@ export function ChatClient() {
   const metadataRef = useRef<MessageMetadata | null>(null);
 
   const sendMessage = useCallback(
-    async (text: string) => {
+    async (text: string, imagePath?: string) => {
       lastUserMessageRef.current = text;
-      const body: { message: string; conversation_id?: string } = { message: text };
+      const body: { message: string; conversation_id?: string; image_path?: string } = {
+        message: text,
+      };
       if (conversationId) body.conversation_id = conversationId;
+      if (imagePath) body.image_path = imagePath;
 
       const localId = `local-user-${Date.now()}`;
       setMessages((prev) => [
@@ -374,7 +377,10 @@ export function ChatClient() {
               onExample={(prompt) => void sendMessage(prompt)}
             />
 
-            <ChatComposer disabled={isStreaming} onSend={(text) => void sendMessage(text)} />
+            <ChatComposer
+              disabled={isStreaming}
+              onSend={(text, imagePath) => void sendMessage(text, imagePath)}
+            />
           </main>
         </div>
       </main>

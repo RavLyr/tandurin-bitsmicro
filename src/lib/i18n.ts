@@ -131,12 +131,20 @@ export const STRINGS = {
     recommendationTitle: "Rekomendasi Tanaman",
     matchBadge: (percent: number) => `Kecocokan: ${percent}%`,
     diagnosisActions: "Tindakan Segera:",
+    diagnosisDisclaimer:
+      "Ini adalah perkiraan AI, bukan diagnosis laboratorium. Jika gejala memburuk, konsultasikan dengan ahli.",
     severityLabel: (severity: string) => severity.charAt(0).toUpperCase() + severity.slice(1),
     taskSummaryTitle: "Jadwal Tugas Berhasil Dibuat",
     openKanban: "Buka Kanban",
     taskPlanConfirmed: "Oke, saya buatkan jadwalnya sekarang...",
     taskSummaryCta:
       "Cek papan Kanban di dashboard untuk mengelola jadwalmu.",
+  },
+  upload: {
+    formatUnsupported: "Format gambar tidak didukung",
+    sizeTooLarge: "Ukuran maksimal 5 MB",
+    uploadFailed: "Gagal mengunggah gambar, coba lagi.",
+    invalidBody: "Data tidak valid.",
   },
   riwayat: {
     title: "Riwayat Konsultasi",

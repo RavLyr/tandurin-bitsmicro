@@ -30,6 +30,8 @@ export interface RunChatParams {
   systemInstruction?: string;
   onToken?: (text: string) => void;
   supabase?: unknown;
+  /** Inline image attached to the user message (T-401, F-04): base64 data. */
+  image?: { mimeType: string; data: string } | null;
 }
 
 export interface RunChatResult {
@@ -48,14 +50,22 @@ function getClient(apiKey: string): GoogleGenAI {
 function buildContents(
   systemInstruction: string,
   history: ChatTurn[],
-  prompt: string
+  prompt: string,
+  image?: { mimeType: string; data: string } | null
 ): { systemInstruction: string; contents: Content[] } {
   const trimmed = history.slice(-MAX_HISTORY);
   const contents: Content[] = trimmed.map((turn) => ({
     role: turn.role,
     parts: [{ text: turn.content }],
   }));
-  contents.push({ role: "user", parts: [{ text: prompt }] });
+  const userParts: Part[] = [];
+  if (image) {
+    userParts.push({
+      inlineData: { mimeType: image.mimeType, data: image.data },
+    });
+  }
+  userParts.push({ text: prompt });
+  contents.push({ role: "user", parts: userParts });
   return { systemInstruction, contents };
 }
 
@@ -67,6 +77,7 @@ export async function runChat({
   systemInstruction = "",
   onToken,
   supabase,
+  image = null,
 }: RunChatParams): Promise<RunChatResult> {
   const apiKey = process.env.GEMINI_API_KEY;
   const model = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
@@ -85,7 +96,7 @@ export async function runChat({
     ? `${systemInstruction}\n\nInfo lahan aktif pengguna:\n${context.landSummary}`
     : systemInstruction;
 
-  let { contents } = buildContents(instruction, history, prompt);
+  let { contents } = buildContents(instruction, history, prompt, image);
 
   const functionCalls: { name: string; args: Record<string, unknown>; output: unknown }[] = [];
   let text = "";

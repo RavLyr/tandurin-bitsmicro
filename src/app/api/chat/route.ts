@@ -112,6 +112,7 @@ export async function POST(request: NextRequest) {
     land_id?: string | null;
     message?: unknown;
     history?: unknown;
+    image_path?: unknown;
   };
   try {
     body = await request.json();
@@ -174,6 +175,34 @@ export async function POST(request: NextRequest) {
       : null;
   const awaitingConfirmation = prevMetadata?.type === "recommendation";
 
+  // T-401 (F-04): resolve image context — explicit upload this message, or the
+  // most recent stored image_path in this conversation (no re-upload needed).
+  const ownImagePath =
+    typeof body.image_path === "string" && body.image_path ? body.image_path : null;
+  const lastImagePath =
+    (prevMetadata && typeof prevMetadata.image_path === "string" ? prevMetadata.image_path : null) ??
+    null;
+  const imagePath = ownImagePath ?? lastImagePath;
+
+  let image: { mimeType: string; data: string } | null = null;
+  if (imagePath) {
+    try {
+      const { data: blob, error: dlError } = await service.storage
+        .from("plant-images")
+        .download(imagePath);
+      if (dlError) {
+        console.error("[api/chat] image download error:", dlError.message);
+      } else if (blob) {
+        image = {
+          mimeType: blob.type || "image/jpeg",
+          data: Buffer.from(await blob.arrayBuffer()).toString("base64"),
+        };
+      }
+    } catch (err) {
+      console.error("[api/chat] image fetch throw:", err);
+    }
+  }
+
   // Resolve context land summary.
   const landId = body.land_id ?? null;
   const context: { landSummary?: string } = {};
@@ -229,7 +258,7 @@ export async function POST(request: NextRequest) {
       conversation_id: conversationId,
       role: "user",
       content: message,
-      metadata: {},
+      metadata: imagePath ? { image_path: imagePath } : {},
     })
     .select("id")
     .single();
@@ -388,6 +417,8 @@ export async function POST(request: NextRequest) {
           history,
           context,
           supabase: service,
+          image,
+          diagnose: image !== null,
           onToken: (text) => {
             accumulatedText += text;
             send({ type: "token", text });
@@ -411,13 +442,23 @@ export async function POST(request: NextRequest) {
         const hasMetadata =
           metadata.toolCalls.length > 0 ||
           metadata.land_conditions !== undefined ||
-          isRecommendation;
+          isRecommendation ||
+          image !== null;
+        const typeMeta = isRecommendation
+          ? { type: "recommendation" }
+          : image !== null
+            ? {
+                type: "diagnosis",
+                image_path: imagePath,
+                mime_type: image?.mimeType ?? "image/jpeg",
+              }
+            : {};
         await service.from("messages").insert({
           conversation_id: conversationId,
           role: "assistant",
           content,
           metadata: hasMetadata
-            ? { ...metadata, ...(isRecommendation ? { type: "recommendation" } : {}) }
+            ? { ...metadata, ...typeMeta }
             : {},
         });
         await service

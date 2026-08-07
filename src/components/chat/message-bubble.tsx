@@ -41,7 +41,10 @@ export function MessageBubble({
         ) : null}
         {metadata?.type === "diagnosis" ? (
           <div className="mt-3">
-            <DiagnosisCard data={metadata.diagnostics} />
+            <DiagnosisCard
+              data={metadata.diagnostics}
+              imagePath={metadata.image_path}
+            />
           </div>
         ) : null}
         {metadata?.type === "task-summary" ? (
