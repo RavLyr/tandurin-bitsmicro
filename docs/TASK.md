@@ -224,7 +224,7 @@ end $$;
 **Verification:** `curl` with session: update status → row changed; comment → row in `task_comments`; delete → row gone; cross-user id → 404/403.
 
 ### T-304: Kanban page UI (F-06)
-- [ ] **T-304** — Kanban page UI (F-06)
+- [x] **T-304** — Kanban page UI (F-06)
 **Files:** `src/app/(protected)/dashboard/page.tsx`, `src/components/kanban/board.tsx`, `src/components/kanban/column.tsx`, `src/components/kanban/task-card.tsx`, `src/components/kanban/filter-bar.tsx`, `src/components/kanban/realtime-banner.tsx` (new).
 **Steps:**
 1. Page per DESIGN §4.2: three fixed columns "Belum Dikerjakan" / "Sedang Dikerjakan" / "Selesai" (colored dot + title + count badge), horizontal scroll on mobile, equal grid on desktop. Header (T-005) + "Chat Tanduri" button → opens `/chat` (new tab or route).
