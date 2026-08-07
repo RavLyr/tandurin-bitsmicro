@@ -1,4 +1,4 @@
-import { GoogleGenAI, type Content, type FunctionDeclaration, type FunctionResponse, type Tool } from "@google/genai";
+import { GoogleGenAI, type Content, type FunctionDeclaration, type FunctionResponse, type Part, type Tool } from "@google/genai";
 
 /**
  * Orchestrator (T-202): generic streaming chat + Gemini function-calling loop.
@@ -100,6 +100,7 @@ export async function runChat({
       },
     });
 
+    const modelParts: Part[] = [];
     const callParts: {
       name?: string;
       args?: Record<string, unknown>;
@@ -111,6 +112,7 @@ export async function runChat({
       const parts = chunk.candidates?.[0]?.content?.parts ?? [];
       for (const part of parts) {
         if (part.functionCall) {
+          modelParts.push(part);
           callParts.push(part.functionCall);
         } else if (part.text) {
           turnText += part.text;
@@ -146,7 +148,7 @@ export async function runChat({
 
     contents = [
       ...contents,
-      { role: "model", parts: callParts.map((c) => ({ functionCall: c })) },
+      { role: "model", parts: modelParts },
       { role: "user", parts: functionResponses.map((r) => ({ functionResponse: r })) },
     ];
 

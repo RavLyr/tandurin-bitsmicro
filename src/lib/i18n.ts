@@ -175,4 +175,12 @@ export const STRINGS = {
       "Tindakan di bawah ini akan mengakhiri sesi Anda saat ini. Pastikan semua perubahan telah disimpan.",
     logout: "Keluar dari Akun",
   },
+  chat_errors: {
+    unauth: "Sesi berakhir, silakan login kembali.",
+    emptyMessage: "Pesan tidak boleh kosong.",
+    notFound: "Percakapan tidak ditemukan.",
+    aiUnavailable: "Layanan AI sedang tidak tersedia, coba lagi nanti",
+    noLand:
+      "Tambahkan lahanmu dulu di halaman Lahan, atau ceritakan kondisinya langsung",
+  },
 } as const;

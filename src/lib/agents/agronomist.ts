@@ -41,16 +41,12 @@ export async function runAgronomist({
   onToken,
   supabase,
 }: RunAgronomistParams): Promise<RunAgronomistResult> {
-  const landNote = context.landSummary
-    ? `\n\nInfo lahan aktif pengguna:\n${context.landSummary}\n\nGunakan detail ini bila relevan.`
-    : "";
-
   const { text, functionCalls } = await runChat({
     prompt,
     history,
     tools: agronomistTools,
     context,
-    systemInstruction: SYSTEM_PROMPTS.agronomist + landNote,
+    systemInstruction: SYSTEM_PROMPTS.agronomist,
     onToken,
     supabase,
   });
