@@ -1,0 +1,112 @@
+name: Tanduri Design System
+colors:
+  surface: '#F8FAF7'
+  surface-dim: '#E7DECD'
+  surface-bright: '#FFFFFF'
+  surface-container-lowest: '#FFFFFF'
+  surface-container-low: '#F8FAF7'
+  surface-container: '#FAF5EF'
+  surface-container-high: '#F1EBDF'
+  surface-container-highest: '#E7DECD'
+  on-surface: '#1F2A21'
+  on-surface-variant: '#5B6B5F'
+  inverse-surface: '#1F2A21'
+  inverse-on-surface: '#F8FAF7'
+  outline: '#5B6B5F'
+  outline-variant: '#E3E8E3'
+  surface-tint: '#16A34A'
+  primary: '#16A34A'
+  on-primary: '#FFFFFF'
+  primary-container: '#DCFCE7'
+  on-primary-container: '#14532D'
+  inverse-primary: '#DCFCE7'
+  secondary: '#5B6B5F'
+  on-secondary: '#FFFFFF'
+  secondary-container: '#FAF5EF'
+  on-secondary-container: '#1F2A21'
+  tertiary: '#14532D'
+  on-tertiary: '#FFFFFF'
+  tertiary-container: '#DCFCE7'
+  on-tertiary-container: '#14532D'
+  error: '#DC2626'
+  on-error: '#FFFFFF'
+  error-container: '#FEE2E2'
+  on-error-container: '#DC2626'
+  primary-fixed: '#DCFCE7'
+  primary-fixed-dim: '#BBF7D0'
+  on-primary-fixed: '#14532D'
+  on-primary-fixed-variant: '#15803D'
+  secondary-fixed: '#E7DECD'
+  secondary-fixed-dim: '#D8CCB6'
+  on-secondary-fixed: '#1F2A21'
+  on-secondary-fixed-variant: '#5B6B5F'
+  tertiary-fixed: '#DCFCE7'
+  tertiary-fixed-dim: '#BBF7D0'
+  on-tertiary-fixed: '#14532D'
+  on-tertiary-fixed-variant: '#15803D'
+  background: '#F8FAF7'
+  on-background: '#1F2A21'
+  surface-variant: '#E7DECD'
+  accent-danger: '#DC2626'
+  accent-warning: '#D97706'
+  primary-deep: '#14532D'
+  primary-strong: '#15803D'
+  primary-soft: '#DCFCE7'
+  danger-soft: '#FEE2E2'
+  earth-50: '#FAF5EF'
+  earth-200: '#E7DECD'
+  border: '#E3E8E3'
+  text-muted: '#5B6B5F'
+typography:
+  display-2xl:
+    fontFamily: Plus Jakarta Sans
+    fontSize: 24px
+    fontWeight: '700'
+    lineHeight: 32px
+    letterSpacing: -0.01em
+  display-lg:
+    fontFamily: Plus Jakarta Sans
+    fontSize: 20px
+    fontWeight: '600'
+    lineHeight: 28px
+  display-lg-mobile:
+    fontFamily: Plus Jakarta Sans
+    fontSize: 20px
+    fontWeight: '600'
+    lineHeight: 28px
+  headline-md:
+    fontFamily: Plus Jakarta Sans
+    fontSize: 18px
+    fontWeight: '600'
+    lineHeight: 24px
+  body-lg:
+    fontFamily: Plus Jakarta Sans
+    fontSize: 16px
+    fontWeight: '400'
+    lineHeight: 24px
+  body-md:
+    fontFamily: Plus Jakarta Sans
+    fontSize: 14px
+    fontWeight: '400'
+    lineHeight: 20px
+  label-sm:
+    fontFamily: Space Mono
+    fontSize: 12px
+    fontWeight: '500'
+    lineHeight: 16px
+    letterSpacing: 0.08em
+  button:
+    fontFamily: Plus Jakarta Sans
+    fontSize: 14px
+    fontWeight: '700'
+    lineHeight: 20px
+    letterSpacing: 0.02em
+spacing:
+  base: 4px
+  margin-mobile: 16px
+  margin-desktop: 32px
+  gutter: 16px
+  section-gap: 48px
+---
+
+{{DATA:DOCUMENT:DOCUMENT_1}}

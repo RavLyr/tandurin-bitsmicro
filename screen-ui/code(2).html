@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<style>
+@layer base {
+  html, body { margin: 0; padding: 0; }
+  body { overscroll-behavior: none; }
+  main > :first-child { margin-top: 0 !important; }
+  main > :last-child { margin-bottom: 0 !important; }
+}
+::-webkit-scrollbar { display: none; }
+</style>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+                "on-secondary-fixed": "#101f15",
+                "surface-variant": "#d9e6d8",
+                "surface-dim": "#d1ddd0",
+                "error-container": "#ffdad6",
+                "tertiary-fixed": "#b1f2be",
+                "primary-container": "#00873a",
+                "on-primary-fixed-variant": "#005320",
+                "outline": "#6e7b6c",
+                "surface-container-low": "#eaf7e9",
+                "on-secondary-container": "#58685c",
+                "tertiary": "#2b673f",
+                "outline-variant": "#bdcaba",
+                "on-surface": "#131e16",
+                "secondary-fixed": "#d5e7d8",
+                "on-surface-variant": "#3e4a3d",
+                "on-tertiary-fixed-variant": "#12512c",
+                "on-primary-container": "#f7fff2",
+                "surface-tint": "#006e2d",
+                "on-background": "#131e16",
+                "secondary-fixed-dim": "#bacbbc",
+                "surface-container-lowest": "#ffffff",
+                "secondary-container": "#d5e7d8",
+                "on-error-container": "#93000a",
+                "on-tertiary-fixed": "#00210d",
+                "on-tertiary-container": "#f6fff4",
+                "inverse-primary": "#62df7d",
+                "on-primary-fixed": "#002109",
+                "secondary": "#526256",
+                "error": "#ba1a1a",
+                "primary": "#006b2c",
+                "tertiary-fixed-dim": "#96d5a3",
+                "background": "#f0fdef",
+                "surface": "#f0fdef",
+                "inverse-on-surface": "#e7f4e6",
+                "inverse-surface": "#28332a",
+                "surface-container-highest": "#d9e6d8",
+                "primary-fixed": "#7ffc97",
+                "on-error": "#ffffff",
+                "on-primary": "#ffffff",
+                "surface-container-high": "#dfecde",
+                "on-tertiary": "#ffffff",
+                "primary-fixed-dim": "#62df7d",
+                "surface-container": "#e4f1e3",
+                "on-secondary-fixed-variant": "#3b4a3f",
+                "surface-bright": "#f0fdef",
+                "on-secondary": "#ffffff",
+                "tertiary-container": "#458156",
+                "bg": "#F8FAF7",
+                "border-color": "#E3E8E3",
+                "danger-soft": "#ffdad6"
+        },
+        "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "md": "0.5rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px"
+        },
+        "spacing": {
+            "margin-desktop": "64px",
+            "margin-mobile": "20px"
+        },
+        "fontFamily": {
+                "headline": [
+                        "Plus Jakarta Sans"
+                ],
+                "display": [
+                        "Plus Jakarta Sans"
+                ],
+                "body": [
+                        "Plus Jakarta Sans"
+                ],
+                "label": [
+                        "Space Mono"
+                ]
+        },
+        "fontSize": {}
+},
+    },
+  }
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;family=Space+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+</head>
+<body class="bg-bg font-body text-on-surface">
+<header class="fixed top-0 w-full z-50 bg-surface-container-lowest border-b border-border-color">
+<div class="h-16 w-full px-margin-mobile lg:px-margin-desktop flex items-center justify-between">
+<div class="flex items-center gap-4">
+<img alt="Tanduri Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AP1WRLsN3WToSxXeYAuu-HML2e5qqj9mtZ5VO52UfI0FJucc8h65uDwE2JjsVMJfR4zh3tDRWTpXa-MFFWPeby_K0u0-MZr8kvdVSa_B1TBggOSk2XEdOUErSZaWENI3PhQZE_-kWnZ63tQaLgT7BDrdGKhcckmsUc5Y1j27sI9Tdh_Zv5hjUGAv7DWOSo4l9XN4VfP7_aiWCaqLjn-WZpHLQBHVL7RLUHTTk6MTlmv_m1qzQto6hEJO8BMsOGSM"/>
+<div class="relative group hidden md:block">
+<button class="flex items-center gap-2 px-3 py-1.5 border border-border-color rounded text-label text-sm uppercase hover:bg-surface-container transition-colors focus:ring-2 focus:ring-primary focus:outline-none">
+<span class="">Pilih Lahan</span>
+<span class="material-symbols-outlined text-sm">keyboard_arrow_down</span>
+</button>
+</div>
+</div>
+<div class="flex-1 flex justify-center">
+<a aria-label="Chat Tanduri" class="bg-primary text-on-primary px-6 py-2 rounded-md font-body font-semibold uppercase hover:bg-surface hover:text-primary border-2 border-primary transition-all duration-300 hidden md:block focus:ring-2 focus:ring-primary focus:outline-none" data-path="chat" href="#">Chat Tanduri</a>
+</div>
+<nav class="flex items-center gap-8" data-active-classes="underline decoration-2 underline-offset-8 text-primary">
+<div class="hidden md:flex items-center gap-8 font-body text-sm font-semibold uppercase">
+<a aria-label="Riwayat" class="text-on-surface-variant hover:text-on-surface transition-colors focus:ring-2 focus:ring-primary focus:outline-none" data-path="riwayat" href="#">Riwayat</a>
+<a aria-label="Lahan" class="text-on-surface-variant hover:text-on-surface transition-colors focus:ring-2 focus:ring-primary focus:outline-none" data-path="lahan" href="#">Lahan</a>
+</div>
+<a aria-label="Profil" class="flex items-center focus:ring-2 focus:ring-primary focus:outline-none rounded-full" data-path="profil" href="#">
+<img alt="Profile" class="w-8 h-8 rounded-full object-cover ring-1 ring-border-color ring-offset-2 ring-offset-surface-container-lowest" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBwlOBvWGtV0meOo_hIyxAT1uUPfvsdCnRgVhVodcRv9UVAePdYstZC7EbFe4RzPP-Qkdned5VNl5vprrLGWdVHKY2SMe-hEu0kRh9mXTwUzFG98OClW99FGNkd1TrY5b3NzrHM_16PQ0o_gQNEKYU7wQVGj9g5isj_cORxg323SYs9Oy7M9GVH2ErYKBGykgyFKjB3bhBqZKK-oYEB9ZDqyxDv9h-vH9e5w9IlB15WTZ4j-mtRegQYOA"/>
+</a>
+</nav>
+</div>
+</header>
+<main class="w-full pt-16">
+<div class="flex flex-col w-full h-full min-h-[calc(100vh-64px)] pb-margin-desktop bg-bg">
+<!-- Filter Bar -->
+<div class="sticky top-16 z-30 w-full bg-surface-container-lowest/90 backdrop-blur-md border-b border-border-color px-margin-mobile lg:px-margin-desktop py-4 flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
+<div class="flex flex-col md:flex-row gap-4 items-start md:items-center w-full md:w-auto">
+<h1 class="font-headline text-xl font-bold text-on-surface">Papan Tugas</h1>
+<div class="h-4 w-px bg-outline-variant hidden md:block"></div>
+<div class="relative group w-full md:w-64">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">search</span>
+<input aria-label="Cari tugas" class="w-full bg-surface border border-border-color rounded-md pl-10 pr-4 py-2 font-body text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:ring-2 focus:ring-primary transition-colors" placeholder="Cari tugas..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-3 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 hide-scrollbar">
+<button aria-label="Filter semua lahan" class="shrink-0 px-4 py-1.5 border border-primary bg-primary text-on-primary font-label text-xs uppercase tracking-widest rounded-md hover:bg-inverse-surface transition-colors focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:outline-none">Semua Lahan</button>
+<button aria-label="Filter Tanduri Blok A" class="shrink-0 px-4 py-1.5 border border-border-color bg-surface-container-lowest text-on-surface font-label text-xs uppercase tracking-widest rounded-md hover:bg-surface-container transition-colors focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:outline-none">Tanduri Blok A</button>
+<button aria-label="Filter Kebun Hidroponik" class="shrink-0 px-4 py-1.5 border border-border-color bg-surface-container-lowest text-on-surface font-label text-xs uppercase tracking-widest rounded-md hover:bg-surface-container transition-colors focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:outline-none">Kebun Hidroponik</button>
+</div>
+</div>
+<!-- Kanban Board Canvas -->
+<div class="flex-1 w-full px-margin-mobile lg:px-margin-desktop py-8 overflow-x-auto hide-scrollbar">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 min-w-[900px] h-full items-start">
+<!-- Column 1: Belum Dikerjakan -->
+<div class="flex flex-col gap-4">
+<div class="flex items-center justify-between pb-3 border-b-2 border-border-color">
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-error"></div>
+<h2 class="font-headline text-lg font-semibold text-on-surface">Belum Dikerjakan</h2>
+</div>
+<span aria-label="3 tugas belum dikerjakan" class="font-label text-xs text-on-surface-variant bg-surface-container-high px-2 py-1 rounded">3</span>
+</div>
+<div class="flex flex-col gap-4">
+<!-- Overdue Task Card -->
+<div class="group relative bg-danger-soft border-l-4 border-l-error border-y border-r border-border-color rounded-md p-4 hover:shadow-md transition-shadow focus-within:ring-2 focus-within:ring-primary">
+<div class="flex justify-between items-start mb-3">
+<span class="inline-block px-2 py-1 bg-error/20 text-on-error-container font-label text-xs font-bold uppercase tracking-widest rounded">Terlambat 2 Hari</span>
+<button aria-label="Opsi tugas Pembersihan Gulma Blok A1" class="text-on-surface-variant hover:text-primary transition-colors focus:outline-none focus:ring-2 focus:ring-primary rounded">
+<span class="material-symbols-outlined">more_horiz</span>
+</button>
+</div>
+<h3 class="font-headline text-base font-semibold text-on-surface mb-2 line-clamp-2">Pembersihan Gulma Blok A1</h3>
+<p class="font-body text-sm text-on-surface-variant mb-4 line-clamp-2">Pastikan semua gulma di sekitar tanaman tomat dicabut hingga ke akar.</p>
+<div class="flex items-center justify-between mt-auto pt-3 border-t border-border-color">
+<div class="flex items-center gap-1.5 text-error font-label text-xs">
+<span class="material-symbols-outlined text-sm">calendar_today</span>
+<span class="">12 Okt 2023</span>
+</div>
+<span class="px-2 py-0.5 border border-error text-error font-label text-[10px] uppercase rounded">Olah Lahan</span>
+</div>
+</div>
+<!-- Normal Task Card -->
+<div class="group relative bg-surface-container-lowest border border-border-color rounded-md p-4 hover:shadow-md transition-shadow focus-within:ring-2 focus-within:ring-primary">
+<div class="flex justify-between items-start mb-3">
+<h3 class="font-headline text-base font-semibold text-on-surface mb-2 line-clamp-2">Pemberian Pupuk Dasar NPK</h3>
+<button aria-label="Opsi tugas Pemberian Pupuk Dasar NPK" class="text-on-surface-variant hover:text-primary transition-colors focus:outline-none focus:ring-2 focus:ring-primary rounded">
+<span class="material-symbols-outlined">more_horiz</span>
+</button>
+</div>
+<p class="font-body text-sm text-on-surface-variant mb-4 line-clamp-2">Gunakan takaran 15g per lubang tanam sesuai rekomendasi AI Tanduri.</p>
+<div class="flex items-center justify-between mt-auto pt-3 border-t border-border-color">
+<div class="flex items-center gap-1.5 text-on-surface-variant font-label text-xs">
+<span class="material-symbols-outlined text-sm">calendar_today</span>
+<span class="">15 Okt 2023</span>
+</div>
+<span class="px-2 py-0.5 border border-border-color text-on-surface-variant font-label text-[10px] uppercase rounded">Pemupukan</span>
+</div>
+</div>
+</div>
+<button aria-label="Tambah Tugas Baru" class="w-full py-3 border border-dashed border-border-color rounded-md text-on-surface-variant hover:text-primary hover:border-primary font-body text-sm font-semibold uppercase tracking-widest transition-colors flex items-center justify-center gap-2 focus:ring-2 focus:ring-primary focus:outline-none">
+<span class="material-symbols-outlined">add</span> Tambah Tugas
+</button>
+</div>
+<!-- Column 2: Sedang Dikerjakan -->
+<div class="flex flex-col gap-4">
+<div class="flex items-center justify-between pb-3 border-b-2 border-border-color">
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-[#E3A334]"></div>
+<h2 class="font-headline text-lg font-semibold text-on-surface">Sedang Dikerjakan</h2>
+</div>
+<span aria-label="2 tugas sedang dikerjakan" class="font-label text-xs text-on-surface-variant bg-surface-container-high px-2 py-1 rounded">2</span>
+</div>
+<div class="flex flex-col gap-4">
+<!-- In Progress Task -->
+<div class="group relative bg-surface-container-lowest border border-border-color rounded-md p-4 hover:shadow-md transition-shadow focus-within:ring-2 focus-within:ring-primary">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-[#E3A334] rounded-l-md"></div>
+<div class="flex justify-between items-start mb-3">
+<h3 class="font-headline text-base font-semibold text-on-surface mb-2 line-clamp-2 pr-6">Pemasangan Mulsa Plastik</h3>
+<button aria-label="Opsi tugas Pemasangan Mulsa Plastik" class="text-on-surface-variant hover:text-primary transition-colors focus:outline-none focus:ring-2 focus:ring-primary rounded">
+<span class="material-symbols-outlined">more_horiz</span>
+</button>
+</div>
+<p class="font-body text-sm text-on-surface-variant mb-4 line-clamp-2">Blok B dan C butuh segera ditutup mulsa sebelum hujan turun sore ini.</p>
+<div class="flex flex-col gap-3 mt-auto pt-3 border-t border-border-color">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5 text-on-surface-variant font-label text-xs">
+<span class="material-symbols-outlined text-sm">calendar_today</span>
+<span class="">Hari Ini</span>
+</div>
+<span class="px-2 py-0.5 border border-border-color text-on-surface-variant font-label text-[10px] uppercase rounded">Persiapan</span>
+</div>
+<button aria-label="Tandai Pemasangan Mulsa Plastik Selesai" class="w-full py-1.5 bg-primary text-on-primary rounded font-body text-sm font-semibold uppercase hover:bg-inverse-surface transition-colors focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:outline-none">
+Tandai Selesai
+</button>
+</div>
+</div>
+<!-- In Progress Task -->
+<div class="group relative bg-surface-container-lowest border border-border-color rounded-md p-4 hover:shadow-md transition-shadow focus-within:ring-2 focus-within:ring-primary">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-[#E3A334] rounded-l-md"></div>
+<div class="flex justify-between items-start mb-3">
+<h3 class="font-headline text-base font-semibold text-on-surface mb-2 line-clamp-2 pr-6">Penyiraman Otomatis Sektor 1</h3>
+<button aria-label="Opsi tugas Penyiraman Otomatis Sektor 1" class="text-on-surface-variant hover:text-primary transition-colors focus:outline-none focus:ring-2 focus:ring-primary rounded">
+<span class="material-symbols-outlined">more_horiz</span>
+</button>
+</div>
+<p class="font-body text-sm text-on-surface-variant mb-4 line-clamp-2">Sistem irigasi sedang berjalan selama 45 menit ke depan.</p>
+<div class="flex flex-col gap-3 mt-auto pt-3 border-t border-border-color">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5 text-on-surface-variant font-label text-xs">
+<span class="material-symbols-outlined text-sm">calendar_today</span>
+<span class="">Hari Ini</span>
+</div>
+<span class="px-2 py-0.5 border border-border-color text-on-surface-variant font-label text-[10px] uppercase rounded">Perawatan</span>
+</div>
+<div class="w-full h-1 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[60%]"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Column 3: Selesai -->
+<div class="flex flex-col gap-4 opacity-75 hover:opacity-100 transition-opacity">
+<div class="flex items-center justify-between pb-3 border-b-2 border-border-color">
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-[#2E7D32]"></div>
+<h2 class="font-headline text-lg font-semibold text-on-surface">Selesai</h2>
+</div>
+<span aria-label="12 tugas selesai" class="font-label text-xs text-on-surface-variant bg-surface-container-high px-2 py-1 rounded">12</span>
+</div>
+<div class="flex flex-col gap-4">
+<!-- Completed Task -->
+<div class="group relative bg-surface-container-lowest border border-border-color rounded-md p-4">
+<div class="absolute inset-0 bg-surface/50 pointer-events-none rounded-md"></div>
+<div class="flex justify-between items-start mb-3 relative z-10">
+<h3 class="font-headline text-base font-semibold text-on-surface-variant mb-2 line-clamp-2 line-through decoration-1">Pengecekan pH Tanah</h3>
+<span class="material-symbols-outlined text-[#2E7D32]">check_circle</span>
+</div>
+<div class="flex items-center justify-between mt-auto pt-3 border-t border-border-color relative z-10">
+<div class="flex items-center gap-1.5 text-on-surface-variant font-label text-xs">
+<span class="material-symbols-outlined text-sm">check</span>
+<span class="">10 Okt 2023</span>
+</div>
+<span class="px-2 py-0.5 border border-border-color text-on-surface-variant font-label text-[10px] uppercase rounded">Analisis</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<footer class="md:hidden fixed bottom-0 w-full bg-surface-container-lowest border-t border-border-color px-margin-mobile py-3 z-50">
+<nav class="flex justify-around items-center">
+<a aria-label="Home" class="flex flex-col items-center gap-1 text-on-surface-variant focus:ring-2 focus:ring-primary rounded p-1" data-path="dashboard" href="#"><span class="material-symbols-outlined">grid_view</span><span class="text-[10px] font-label font-semibold">HOME</span></a>
+<a aria-label="Chat" class="flex flex-col items-center gap-1 text-on-surface-variant focus:ring-2 focus:ring-primary rounded p-1" data-path="chat" href="#"><span class="material-symbols-outlined">chat_bubble</span><span class="text-[10px] font-label font-semibold">CHAT</span></a>
+<a aria-label="Riwayat" class="flex flex-col items-center gap-1 text-on-surface-variant focus:ring-2 focus:ring-primary rounded p-1" data-path="riwayat" href="#"><span class="material-symbols-outlined">history</span><span class="text-[10px] font-label font-semibold">RIWAYAT</span></a>
+<a aria-label="Lahan" class="flex flex-col items-center gap-1 text-on-surface-variant focus:ring-2 focus:ring-primary rounded p-1" data-path="lahan" href="#"><span class="material-symbols-outlined">landscape</span><span class="text-[10px] font-label font-semibold">LAHAN</span></a>
+</nav>
+</footer>
+</body></html>

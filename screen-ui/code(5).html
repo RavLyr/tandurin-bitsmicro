@@ -1,0 +1,265 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<style>
+@layer base {
+  html, body {
+    margin: 0;
+    padding: 0;
+  }
+  body {
+    overscroll-behavior: none;
+  }
+  main > :first-child {
+    margin-top: 0 !important;
+  }
+  main > :last-child {
+    margin-bottom: 0 !important;
+  }
+}
+::-webkit-scrollbar {
+  display: none;
+}
+</style>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+                "secondary-container": "#d5e7d8",
+                "primary": "#006b2c",
+                "secondary-fixed": "#d5e7d8",
+                "tertiary-fixed-dim": "#96d5a3",
+                "inverse-on-surface": "#e7f4e6",
+                "surface-container-high": "#dfecde",
+                "tertiary": "#2b673f",
+                "surface-tint": "#006e2d",
+                "surface-variant": "#d9e6d8",
+                "inverse-surface": "#28332a",
+                "secondary": "#526256",
+                "secondary-fixed-dim": "#bacbbc",
+                "on-error-container": "#93000a",
+                "primary-fixed-dim": "#62df7d",
+                "on-surface": "#131e16",
+                "on-primary-fixed-variant": "#005320",
+                "surface-container-highest": "#d9e6d8",
+                "surface-container-lowest": "#ffffff",
+                "on-error": "#ffffff",
+                "surface-container": "#e4f1e3",
+                "tertiary-container": "#458156",
+                "on-surface-variant": "#3e4a3d",
+                "on-background": "#131e16",
+                "on-primary-fixed": "#002109",
+                "error": "#ba1a1a",
+                "surface-container-low": "#eaf7e9",
+                "background": "#f0fdef",
+                "on-secondary": "#ffffff",
+                "on-tertiary-fixed-variant": "#12512c",
+                "on-secondary-fixed-variant": "#3b4a3f",
+                "inverse-primary": "#62df7d",
+                "on-secondary-fixed": "#101f15",
+                "outline-variant": "#bdcaba",
+                "on-primary": "#ffffff",
+                "surface": "#f0fdef",
+                "on-tertiary-container": "#f6fff4",
+                "on-tertiary": "#ffffff",
+                "on-secondary-container": "#58685c",
+                "surface-bright": "#f0fdef",
+                "primary-container": "#00873a",
+                "tertiary-fixed": "#b1f2be",
+                "outline": "#6e7b6c",
+                "on-tertiary-fixed": "#00210d",
+                "surface-dim": "#d1ddd0",
+                "error-container": "#ffdad6",
+                "primary-fixed": "#7ffc97",
+                "on-primary-container": "#f7fff2"
+        },
+        "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px"
+        },
+        "spacing": {
+          "base": "8px",
+          "margin-desktop": "64px",
+          "margin-mobile": "20px",
+          "gutter": "24px",
+          "section-gap": "128px"
+        },
+        "fontFamily": {
+                "headline": [
+                        "Plus Jakarta Sans"
+                ],
+                "display": [
+                        "Plus Jakarta Sans"
+                ],
+                "body": [
+                        "Plus Jakarta Sans"
+                ],
+                "label": [
+                        "Space Mono"
+                ],
+                "headline-md": ["Plus Jakarta Sans"],
+                "display-lg": ["Plus Jakarta Sans"],
+                "button": ["Plus Jakarta Sans"],
+                "label-sm": ["Space Mono"],
+                "body-md": ["Plus Jakarta Sans"],
+                "display-lg-mobile": ["Plus Jakarta Sans"],
+                "body-lg": ["Plus Jakarta Sans"],
+                "display-2xl": ["Plus Jakarta Sans"]
+        },
+        "fontSize": {
+          "headline-md": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+          "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+          "button": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+          "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.1em", "fontWeight": "500"}],
+          "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+          "display-lg-mobile": ["36px", {"lineHeight": "42px", "fontWeight": "700"}],
+          "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+          "display-2xl": ["80px", {"lineHeight": "88px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+        }
+},
+    },
+  }
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;family=Space+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+</head>
+<body class="bg-[#f0fdef] font-body text-on-surface">
+<header class="fixed top-0 w-full z-50 bg-surface-container-lowest border-b border-outline-variant">
+<div class="h-16 w-full px-margin-mobile lg:px-margin-desktop flex items-center justify-between">
+<div class="flex items-center gap-4">
+<img alt="Tanduri Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDUzstR4b1M9OWRXFyAnS7ciy91mJ0-ixRAsa2M9QO16Wu_8du2ZLhNT5wJNbse9iBrn7oU66KSZDSlWQfM9D-5bqx4AFiAr_NzlgTx__BXV0130AcsTjLTZVma3JtlSqnzNZb_HQlzW_UFvj0qdKStb95HBGOnNScm1QI2VEgJjzR_BfBmZp_X0x4SURUtY5kMz3wpVPQ-vejrjfCMQputQSnHtyqB49-WEb2n9_vNpPL0FsfyrWOOwA">
+<div class="relative group hidden md:block">
+<button class="flex items-center gap-2 px-3 py-1.5 border border-outline rounded text-label-sm font-label uppercase hover:bg-surface-container transition-colors">
+<span>Pilih Lahan</span>
+<span class="material-symbols-outlined text-sm">keyboard_arrow_down</span>
+</button>
+</div>
+</div>
+<div class="flex-1 flex justify-center">
+<a class="bg-primary text-on-primary px-6 py-2 rounded font-button text-button uppercase hover:bg-surface hover:text-primary border-2 border-primary transition-all duration-300 hidden md:block" data-path="chat" href="#">Chat Tanduri</a>
+</div>
+<nav class="flex items-center gap-8" data-active-classes="underline decoration-2 underline-offset-8 text-primary">
+<div class="hidden md:flex items-center gap-8 font-button text-button uppercase">
+<a aria-current="page" class="transition-colors underline decoration-2 underline-offset-8 text-primary" data-path="riwayat" href="#">Riwayat</a>
+<a class="text-on-surface-variant hover:text-on-surface transition-colors" data-path="lahan" href="#">Lahan</a>
+</div>
+<a class="flex items-center" data-path="profil" href="#">
+<img alt="Profile" class="w-8 h-8 rounded-full object-cover ring-1 ring-outline ring-offset-2 ring-offset-surface" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBwlOBvWGtV0meOo_hIyxAT1uUPfvsdCnRgVhVodcRv9UVAePdYstZC7EbFe4RzPP-Qkdned5VNl5vprrLGWdVHKY2SMe-hEu0kRh9mXTwUzFG98OClW99FGNkd1TrY5b3NzrHM_16PQ0o_gQNEKYU7wQVGj9g5isj_cORxg323SYs9Oy7M9GVH2ErYKBGykgyFKjB3bhBqZKK-oYEB9ZDqyxDv9h-vH9e5w9IlB15WTZ4j-mtRegQYOA">
+</a>
+</nav>
+</div>
+</header>
+<main class="w-full pt-16">
+<div class="flex flex-col w-full">
+<div class="px-margin-mobile md:px-margin-desktop py-8 md:py-16">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12">
+<div class="flex flex-col gap-4">
+<h1 class="font-display-2xl text-display-2xl text-on-surface">Riwayat Konsultasi</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">
+          Lanjutkan percakapan Anda dengan asisten AI kami. Tinjau kembali analisis lahan, rekomendasi tanaman, dan solusi pertanian Anda sebelumnya.
+        </p>
+</div>
+<div class="w-full md:w-[320px] relative shrink-0">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant z-10">search</span>
+<input class="w-full bg-surface-container-highest text-on-surface font-body py-3 pl-12 pr-4 rounded-full border-none focus:ring-1 focus:ring-primary outline-none transition-shadow" placeholder="Cari riwayat..." type="text">
+</div>
+</div>
+<div class="flex flex-col gap-4" id="history-list">
+<!-- Item 1 -->
+<div class="group relative bg-surface-container-highest p-6 md:p-8 rounded-xl flex flex-col md:flex-row gap-6 md:items-center justify-between transition-transform duration-300 hover:translate-x-2">
+<div class="flex flex-col gap-3 flex-1 min-w-0">
+<div class="flex items-center gap-3">
+<span class="font-label text-label-sm text-on-surface bg-surface-container px-2 py-1 rounded tracking-wider uppercase">Lahan A - Sawah Utara</span>
+<span class="font-label text-label-sm text-on-surface-variant opacity-70">12 Okt 2023, 14:30</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface truncate">Analisis Kualitas Tanah &amp; Rekomendasi Pemupukan</h3>
+<p class="font-body text-body-md text-on-surface-variant line-clamp-2">
+            AI: Berdasarkan data sensor terakhir, pH tanah di Lahan A sedikit asam (5.8). Saya merekomendasikan aplikasi kapur dolomit sebanyak 2 ton per hektar sebelum musim tanam padi berikutnya...
+          </p>
+</div>
+<div class="flex items-center gap-4 shrink-0 mt-4 md:mt-0">
+<button aria-label="Hapus" class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-error hover:bg-error-container transition-colors">
+<span class="material-symbols-outlined">delete</span>
+</button>
+<button class="bg-[#16a34a] text-white font-button text-button uppercase px-6 py-3 rounded-full hover:bg-primary-container hover:text-on-primary-container transition-all duration-300 flex items-center gap-2">
+            Lanjutkan <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="group relative bg-surface-container-highest p-6 md:p-8 rounded-xl flex flex-col md:flex-row gap-6 md:items-center justify-between transition-transform duration-300 hover:translate-x-2">
+<div class="flex flex-col gap-3 flex-1 min-w-0">
+<div class="flex items-center gap-3">
+<span class="font-label text-label-sm text-on-surface bg-surface-container px-2 py-1 rounded tracking-wider uppercase">Lahan B - Kebun Jeruk</span>
+<span class="font-label text-label-sm text-on-surface-variant opacity-70">08 Okt 2023, 09:15</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface truncate">Identifikasi Hama Daun Menguning</h3>
+<p class="font-body text-body-md text-on-surface-variant line-clamp-2">
+            AI: Dari foto yang Anda unggah, pola menguning pada daun menunjukkan gejala awal infeksi kutu loncat (Diaphorina citri). Segera lakukan penyemprotan insektisida sistemik dan pangkas...
+          </p>
+</div>
+<div class="flex items-center gap-4 shrink-0 mt-4 md:mt-0">
+<button aria-label="Hapus" class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-error hover:bg-error-container transition-colors">
+<span class="material-symbols-outlined">delete</span>
+</button>
+<button class="bg-[#16a34a] text-white font-button text-button uppercase px-6 py-3 rounded-full hover:bg-primary-container hover:text-on-primary-container transition-all duration-300 flex items-center gap-2">
+            Lanjutkan <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Item 3 -->
+<div class="group relative bg-surface-container-highest p-6 md:p-8 rounded-xl flex flex-col md:flex-row gap-6 md:items-center justify-between transition-transform duration-300 hover:translate-x-2">
+<div class="flex flex-col gap-3 flex-1 min-w-0">
+<div class="flex items-center gap-3">
+<span class="font-label text-label-sm text-on-surface bg-surface-container px-2 py-1 rounded tracking-wider uppercase">Lahan A - Sawah Utara</span>
+<span class="font-label text-label-sm text-on-surface-variant opacity-70">25 Sep 2023, 16:45</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface truncate">Jadwal Irigasi Musim Kemarau</h3>
+<p class="font-body text-body-md text-on-surface-variant line-clamp-2">
+            AI: Prediksi cuaca menunjukkan tidak ada hujan dalam 10 hari ke depan. Untuk fase vegetatif saat ini, jadwalkan penggenangan setinggi 3cm setiap 3 hari sekali untuk efisiensi air maksimal...
+          </p>
+</div>
+<div class="flex items-center gap-4 shrink-0 mt-4 md:mt-0">
+<button aria-label="Hapus" class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-error hover:bg-error-container transition-colors">
+<span class="material-symbols-outlined">delete</span>
+</button>
+<button class="bg-[#16a34a] text-white font-button text-button uppercase px-6 py-3 rounded-full hover:bg-primary-container hover:text-on-primary-container transition-all duration-300 flex items-center gap-2">
+            Lanjutkan <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+<div class="mt-12 flex justify-center">
+<button class="font-button text-button text-on-surface uppercase underline underline-offset-4 hover:text-on-surface-variant transition-colors">
+            Muat Lebih Banyak
+        </button>
+</div>
+</div>
+</div>
+</main>
+<footer class="md:hidden fixed bottom-0 w-full bg-surface-container-lowest border-t border-outline-variant px-margin-mobile py-3 z-50">
+<nav class="flex justify-around items-center">
+<a class="flex flex-col items-center gap-1 text-on-surface-variant" data-path="dashboard" href="#">
+<span class="material-symbols-outlined">grid_view</span>
+<span class="text-[10px] font-label-sm">HOME</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-on-surface-variant" data-path="chat" href="#">
+<span class="material-symbols-outlined">chat_bubble</span>
+<span class="text-[10px] font-label-sm">CHAT</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-on-surface-variant" data-path="riwayat" href="#">
+<span class="material-symbols-outlined">history</span>
+<span class="text-[10px] font-label-sm">RIWAYAT</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-on-surface-variant" data-path="lahan" href="#">
+<span class="material-symbols-outlined">landscape</span>
+<span class="text-[10px] font-label-sm">LAHAN</span>
+</a>
+</nav>
+</footer>
+</body></html>

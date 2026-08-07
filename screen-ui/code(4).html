@@ -1,0 +1,195 @@
+<!DOCTYPE html><html lang="id"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Pengaturan Profil - Tanduri</title>
+<style>
+    @layer base {
+      html, body { margin: 0; padding: 0; }
+      body { overscroll-behavior: none; }
+      main > :first-child { margin-top: 0 !important; }
+      main > :last-child { margin-bottom: 0 !important; }
+    }
+    ::-webkit-scrollbar { display: none; }
+  </style>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "primary": "#16a34a",
+            "background": "#f0fdef",
+            "surface": "#ffffff",
+            "outline-variant": "#E3E8E3",
+            "on-surface": "#131e16",
+            "on-surface-variant": "#3e4a3d",
+            "error": "#DC2626",
+            "error-container": "#FEE2E2",
+            "on-error-container": "#93000a",
+            "on-primary": "#ffffff",
+            "outline": "#6e7b6c"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "fontFamily": {
+            "headline": ["Plus Jakarta Sans", "sans-serif"],
+            "display": ["Plus Jakarta Sans", "sans-serif"],
+            "body": ["Plus Jakarta Sans", "sans-serif"],
+            "label": ["Plus Jakarta Sans", "sans-serif"]
+          }
+        }
+      }
+    }
+  </script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+</head>
+<body class="bg-background font-body text-on-surface">
+<header class="fixed top-0 w-full z-50 bg-surface border-b border-outline-variant">
+<div class="h-16 w-full px-4 lg:px-8 flex items-center justify-between">
+<div class="flex items-center gap-4">
+<img alt="Tanduri Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDUzstR4b1M9OWRXFyAnS7ciy91mJ0-ixRAsa2M9QO16Wu_8du2ZLhNT5wJNbse9iBrn7oU66KSZDSlWQfM9D-5bqx4AFiAr_NzlgTx__BXV0130AcsTjLTZVma3JtlSqnzNZb_HQlzW_UFvj0qdKStb95HBGOnNScm1QI2VEgJjzR_BfBmZp_X0x4SURUtY5kMz3wpVPQ-vejrjfCMQputQSnHtyqB49-WEb2n9_vNpPL0FsfyrWOOwA">
+<div class="relative group hidden md:block">
+<button class="flex items-center gap-2 px-3 py-1.5 border border-outline-variant rounded text-sm font-label uppercase hover:bg-background transition-colors">
+<span>Pilih Lahan</span>
+<span class="material-symbols-outlined text-sm">keyboard_arrow_down</span>
+</button>
+</div>
+</div>
+<div class="flex-1 flex justify-center">
+<a class="bg-primary text-on-primary px-6 py-2 rounded font-label text-sm uppercase hover:opacity-90 transition-opacity hidden md:block" href="#">Chat Tanduri</a>
+</div>
+<nav class="flex items-center gap-8 text-sm font-label uppercase">
+<div class="hidden md:flex items-center gap-8">
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">Riwayat</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">Lahan</a>
+</div>
+<a aria-current="page" class="flex items-center text-primary border-b-2 border-primary pb-1" href="#">
+<img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBwlOBvWGtV0meOo_hIyxAT1uUPfvsdCnRgVhVodcRv9UVAePdYstZC7EbFe4RzPP-Qkdned5VNl5vprrLGWdVHKY2SMe-hEu0kRh9mXTwUzFG98OClW99FGNkd1TrY5b3NzrHM_16PQ0o_gQNEKYU7wQVGj9g5isj_cORxg323SYs9Oy7M9GVH2ErYKBGykgyFKjB3bhBqZKK-oYEB9ZDqyxDv9h-vH9e5w9IlB15WTZ4j-mtRegQYOA">
+</a>
+</nav>
+</div>
+</header>
+<main class="w-full pt-16">
+<div class="px-4 lg:px-8 py-12 max-w-7xl mx-auto w-full">
+<div class="mb-12">
+<h1 class="text-4xl lg:text-5xl font-display font-bold text-on-surface tracking-tight uppercase">Pengaturan<br>Profil</h1>
+<p class="text-base font-body text-on-surface-variant mt-4 max-w-lg">Kelola informasi pribadi dan preferensi notifikasi untuk pengalaman bertani yang lebih baik.</p>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 relative">
+<div class="lg:col-span-8 flex flex-col gap-12">
+<!-- Section 1: Profil -->
+<section>
+<h2 class="text-xs font-label text-outline mb-6 uppercase tracking-widest flex items-center gap-4">
+<span class="w-8 h-[1px] bg-outline"></span>
+              01. Data Diri
+            </h2>
+<div class="bg-surface p-8 lg:p-12 border border-outline-variant rounded-lg relative overflow-hidden transition-all duration-300 hover:shadow-sm">
+<form id="profile-form">
+<div class="flex flex-col md:flex-row items-start gap-8 mb-8">
+<div class="relative group/avatar cursor-pointer shrink-0">
+<div class="w-24 h-24 rounded-full overflow-hidden border-2 border-outline-variant relative">
+<img alt="Profil Pengguna" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBwlOBvWGtV0meOo_hIyxAT1uUPfvsdCnRgVhVodcRv9UVAePdYstZC7EbFe4RzPP-Qkdned5VNl5vprrLGWdVHKY2SMe-hEu0kRh9mXTwUzFG98OClW99FGNkd1TrY5b3NzrHM_16PQ0o_gQNEKYU7wQVGj9g5isj_cORxg323SYs9Oy7M9GVH2ErYKBGykgyFKjB3bhBqZKK-oYEB9ZDqyxDv9h-vH9e5w9IlB15WTZ4j-mtRegQYOA">
+<div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity duration-300">
+<span class="material-symbols-outlined text-white">photo_camera</span>
+</div>
+</div>
+<input accept="image/*" class="hidden" id="avatar-upload" type="file">
+</div>
+<div class="flex-1 w-full space-y-6">
+<div>
+<label class="block text-xs font-label text-on-surface-variant uppercase mb-2" for="display-name">Nama Tampilan</label>
+<input class="w-full bg-transparent border-b border-outline-variant text-base font-body py-2 focus:outline-none focus:border-primary transition-colors" id="display-name" type="text" value="Budi Santoso">
+</div>
+<div class="relative">
+<label class="block text-xs font-label text-on-surface-variant uppercase mb-2" for="email">Alamat Email</label>
+<input class="w-full bg-transparent border-b border-outline-variant text-base font-body text-on-surface-variant py-2 focus:outline-none cursor-not-allowed" disabled="" id="email" type="email" value="budi.tani@example.com">
+<span class="absolute right-0 top-1/2 -translate-y-1/2 text-[10px] bg-background text-on-surface-variant px-2 py-1 rounded-sm uppercase font-label mt-4">Terverifikasi</span>
+</div>
+</div>
+</div>
+<div class="flex justify-end">
+<button class="bg-primary text-on-primary rounded px-8 py-3 font-label text-sm uppercase hover:opacity-90 transition-opacity flex items-center gap-2" type="button">
+<span>Simpan Perubahan</span>
+<span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</form>
+</div>
+</section>
+<!-- Section 2: Preferensi -->
+<section>
+<h2 class="text-xs font-label text-outline mb-6 uppercase tracking-widest flex items-center gap-4">
+<span class="w-8 h-[1px] bg-outline"></span>
+              02. Preferensi Pengingat
+            </h2>
+<div class="bg-surface p-8 lg:p-12 border border-outline-variant rounded-lg relative overflow-hidden transition-all duration-300 hover:shadow-sm">
+<form id="preferences-form">
+<div class="space-y-8 mb-8">
+<div class="flex items-center justify-between border-b border-outline-variant pb-6">
+<div>
+<h3 class="text-base font-body font-medium text-on-surface">Aktifkan pengingat email</h3>
+<p class="text-sm font-body text-on-surface-variant mt-1">Terima notifikasi jadwal tanam dan panen</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox">
+<div class="w-11 h-6 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+<div>
+<label class="block text-xs font-label text-on-surface-variant uppercase mb-2" for="reminder-time">Jam Pengingat Harian</label>
+<div class="relative">
+<select class="w-full bg-transparent border-b border-outline-variant text-base font-body py-2 focus:outline-none focus:border-primary transition-colors appearance-none pr-8 cursor-pointer rounded-none" id="reminder-time">
+<option value="06:00">Pagi (06:00 WIB)</option>
+<option selected="" value="07:00">Pagi (07:00 WIB)</option>
+<option value="08:00">Pagi (08:00 WIB)</option>
+<option value="16:00">Sore (16:00 WIB)</option>
+<option value="17:00">Sore (17:00 WIB)</option>
+</select>
+<span class="material-symbols-outlined absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant">expand_more</span>
+</div>
+</div>
+</div>
+<div class="flex justify-end">
+<button class="bg-primary text-on-primary rounded px-8 py-3 font-label text-sm uppercase hover:opacity-90 transition-opacity flex items-center gap-2" type="button">
+<span>Simpan Preferensi</span>
+<span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</form>
+</div>
+</section>
+</div>
+<!-- Sidebar Column -->
+<div class="lg:col-span-4 lg:pl-8">
+<div class="sticky top-24">
+<section>
+<h2 class="text-xs font-label text-outline mb-6 uppercase tracking-widest flex items-center gap-4">
+<span class="w-8 h-[1px] bg-outline"></span>
+                03. Keamanan Akun
+              </h2>
+<div class="bg-error-container p-8 border border-error/20 rounded-lg">
+<h3 class="text-2xl font-headline font-bold text-error mb-4">Zona Berbahaya</h3>
+<p class="text-base font-body text-on-error-container mb-8">Tindakan di bawah ini akan mengakhiri sesi Anda saat ini. Pastikan semua perubahan telah disimpan.</p>
+<button class="w-full bg-transparent text-error border-2 border-error rounded px-6 py-3 font-label text-sm uppercase hover:bg-error hover:text-white transition-all duration-300 flex items-center justify-center gap-2" type="button">
+<span class="material-symbols-outlined text-sm">logout</span>
+<span>Keluar dari Akun</span>
+</button>
+</div>
+</section>
+</div>
+</div>
+</div>
+</div>
+</main>
+<script>
+    document.querySelector('.group\\/avatar').addEventListener('click', () => {
+      document.getElementById('avatar-upload').click();
+    });
+  </script>
+</body></html>
