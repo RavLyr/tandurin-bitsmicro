@@ -267,7 +267,7 @@ end $$;
 **Verification:** chat → visit `/riwayat` → conversation listed with preview; click → full thread; "Lanjutkan Konsultasi" → `/chat?conversation_id=…` resumes context (agent recalls prior topic); delete → gone from list, tasks on board unchanged; unauthenticated → `/login`.
 
 ### T-404: Profile page UI (F-10) — *parallel*
-- [ ] **T-404** — Profile page UI (F-10)
+- [x] **T-404** — Profile page UI (F-10)
 **Files:** `src/app/(protected)/profil/page.tsx`, `src/components/profile/avatar-upload.tsx` (new).
 **Steps:**
 1. Page per DESIGN §4.6, three cards: "Profil" (avatar circle 96px + "Ubah Foto" — jpeg/png/webp ≤2MB, client preview before save, upload to `avatars` path `{user_id}/avatar.{ext}` via `/api/upload` variant or direct storage with service-role route; overwrite same path; display_name input; email read-only disabled + note "Email tidak dapat diubah"); "Preferensi Pengingat" (toggle "Aktifkan pengingat email" → `notification_email_preference`; select "Jam pengingat harian" 0–23, default 7); "Akun" (danger-outline "Keluar" → logout route → `/login`).
@@ -276,7 +276,7 @@ end $$;
 **Verification:** edit name → persists + toast; upload avatar → replaces object at same path, new avatar displays; reminder_hour 22 → persists and returned by GET; logout → `/login`; oversized file → rejection, old avatar intact.
 
 ### T-405: Email reminder cron (F-09) — *parallel*
-- [ ] **T-405** — Email reminder cron (F-09)
+- [x] **T-405** — Email reminder cron (F-09)
 **Files:** `src/app/api/cron/reminders/route.ts` (new), `vercel.json` (new).
 **Steps:**
 1. Route: require header `CRON_SECRET === process.env.CRON_SECRET` before ANY query → else 401.
@@ -289,7 +289,7 @@ end $$;
 **Verification:** seed task `due_date = tomorrow` for opted-in user → `curl -X POST <prod-or-local>/api/cron/reminders -H "x-cron-secret: <CRON_SECRET>"` → `{ sent: 1, skipped: 0 }`; re-run same day → `{ sent: 0, skipped: 1 }`; wrong secret → 401; overdue task → email says "Sudah terlambat X hari"; email arrives in sandbox inbox (if Resend sending enabled).
 
 ### T-406: E2E demo script
-- [ ] **T-406** — E2E demo script
+- [x] **T-406** — E2E demo script
 **Files:** `scripts/demo.md`, `scripts/seed.sql` (new).
 **Steps:**
 1. `scripts/seed.sql`: idempotent inserts — demo user `demo@tanduri.test` (fixed UUID, `crypt` password via `auth.admin` convention or documented manual step), demo land (Semarang coords, soil/plenty/full), ~6 tasks spread across the three columns with due dates `today..today+7` including one overdue (Asia/Jakarta) + matching `notification_logs` where already sent.
@@ -300,7 +300,7 @@ end $$;
 ## 7. Phase 5 — Polish & Deploy (Day 3)
 
 ### T-501: Error boundaries & monitoring
-- [ ] **T-501** — Error boundaries & monitoring
+- [x] **T-501** — Error boundaries & monitoring
 **Files:** `src/app/error.tsx`, `src/app/not-found.tsx`, `src/app/(protected)/error.tsx`, `src/app/(auth)/error.tsx` (new).
 **Steps:** per-route-group error boundaries (Indonesian fallback UI + "Coba lagi" reset button); global 404 + 500 pages; toast on API failures via shared fetch helper (`src/lib/utils/fetch.ts`: wrap `fetch` → on non-OK, toast Indonesian message, surface response body error); `console.error` on server-side failures (free tier — no external monitoring).
 **Verification:** trigger 404 → styled page; force an API 500 → toast, no white screen.
