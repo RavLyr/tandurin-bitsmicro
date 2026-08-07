@@ -396,7 +396,7 @@ export function KanbanBoard() {
             onDragEnd={(e) => void handleDragEnd(e)}
             onDragCancel={() => setDraggingId(null)}
           >
-            <div className="grid grid-cols-1 items-start gap-6 md:grid-cols-3">
+            <div className="grid min-w-[900px] grid-cols-1 items-start gap-6 md:grid-cols-3">
               {COLUMNS.map((column) => (
                 <KanbanColumn
                   key={column.status}

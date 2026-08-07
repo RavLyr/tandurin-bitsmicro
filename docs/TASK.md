@@ -306,7 +306,7 @@ end $$;
 **Verification:** trigger 404 → styled page; force an API 500 → toast, no white screen.
 
 ### T-502: Mobile responsiveness audit
-- [ ] **T-502** — Mobile responsiveness audit
+- [x] **T-502** — Mobile responsiveness audit
 **Files:** audit only (edits as needed).
 **Steps:** verify DESIGN §8: `<640px` kanban columns horizontal scroll + full-width cards; chat full-height single pane, composer fixed bottom; header icon-only; forms single column; `<640–1024px` sidebar collapsible, cards 2-up; `>1024px` 3-column grid. Check focus rings (`ring-2 ring-primary-strong ring-offset-2`), `aria-label`s, `prefers-reduced-motion` on typing indicator + skeletons.
 **Verification:** DevTools responsive modes 375/768/1280 px — no horizontal page overflow, all interactions work.

@@ -48,7 +48,7 @@ export function LandCard({
   return (
     <article
       data-active={land.is_active || undefined}
-      className="relative flex flex-col gap-4 rounded-2xl border border-outline-variant bg-surface p-5 shadow-sm transition-colors data-[active]:border-primary data-[active]:border-2 data-[active]:bg-primary-soft"
+      className="relative flex min-w-0 flex-col gap-4 rounded-2xl border border-outline-variant bg-surface p-5 shadow-sm transition-colors data-[active]:border-primary data-[active]:border-2 data-[active]:bg-primary-soft"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 flex-col gap-1">
