@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { STRINGS } from "@/lib/i18n";
+import { LandMapPicker } from "./land-map-picker";
 import type { LandItem } from "./land-card";
 
 export interface LandFormProps {
@@ -212,6 +213,21 @@ export function LandForm({ open, initial, onClose, onSaved }: LandFormProps) {
               {fieldError("longitude")}
             </div>
           </div>
+
+          <LandMapPicker
+            initial={
+              form.latitude !== "" && form.longitude !== ""
+                ? { latitude: toNumber(form.latitude) ?? 0, longitude: toNumber(form.longitude) ?? 0 }
+                : null
+            }
+            onChange={({ latitude, longitude }) => {
+              setField("latitude", String(latitude));
+              setField("longitude", String(longitude));
+            }}
+            onResolvedLocation={(name) => {
+              setForm((prev) => ({ ...prev, location: name }));
+            }}
+          />
 
           <div className="grid grid-cols-2 gap-3">
             <div>
