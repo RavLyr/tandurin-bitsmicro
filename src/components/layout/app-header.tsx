@@ -1,6 +1,10 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Logo } from "@/components/layout/logo";
 import { STRINGS } from "@/lib/i18n";
+import { LandSwitcher } from "@/components/land-switcher";
 
 export type ProtectedPathKey =
   | "dashboard"
@@ -14,11 +18,34 @@ const NAV_LINKS: { key: ProtectedPathKey; label: string; href: string }[] = [
   { key: "lahan", label: STRINGS.header.nav.lahanAria, href: "/lahan" },
 ];
 
+function avatarSrc(avatarUrl: string | null): string | null {
+  if (!avatarUrl) return null;
+  if (/^https?:\/\//.test(avatarUrl)) return avatarUrl;
+  return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/avatars/${avatarUrl}`;
+}
+
 /**
  * Sticky top header for protected pages (DESIGN §3 / Stitch code(2)/(5)/(6)/(7)).
- * Sticky top: fixed h-16, bg-surface-container-lowest, border-b outline-variant.
+ * Client component so the profile avatar (uploaded on /profil) shows here too.
  */
 export function AppHeader({ activePath }: { activePath?: ProtectedPathKey }) {
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetch("/api/profil")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: unknown) => {
+        const d = data as { avatar_url?: string | null } | null;
+        if (!cancelled) setAvatarUrl(d?.avatar_url ?? null);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const shown = avatarSrc(avatarUrl);
   return (
     <header className="fixed top-0 z-50 w-full border-b border-outline-variant bg-surface-container-lowest">
       <div className="flex h-16 w-full items-center justify-between px-margin-mobile lg:px-margin-desktop">
@@ -31,15 +58,7 @@ export function AppHeader({ activePath }: { activePath?: ProtectedPathKey }) {
             <Logo className="h-8 w-8 rounded-lg" />
           </Link>
           <div className="relative hidden md:block">
-            <button
-              type="button"
-              className="flex items-center gap-2 rounded border border-outline px-3 py-1.5 font-label text-sm uppercase transition-colors hover:bg-surface-container focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              <span>{STRINGS.header.landSwitcher}</span>
-              <span className="material-symbols-outlined text-sm" aria-hidden="true">
-                keyboard_arrow_down
-              </span>
-            </button>
+            <LandSwitcher />
           </div>
         </div>
         <div className="flex flex-1 justify-center">
@@ -76,10 +95,15 @@ export function AppHeader({ activePath }: { activePath?: ProtectedPathKey }) {
               activePath === "profil" ? "ring-2 ring-primary" : ""
             }`}
           >
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-surface text-on-surface-variant ring-1 ring-outline ring-offset-2 ring-offset-surface-container-lowest">
-              <span className="material-symbols-outlined text-lg" aria-hidden="true">
-                person
-              </span>
+            <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-surface text-on-surface-variant ring-1 ring-outline ring-offset-2 ring-offset-surface-container-lowest">
+              {shown ? (
+                // eslint-disable-next-line @next/next/no-img-element -- dynamic storage URL
+                <img src={shown} alt={STRINGS.header.profilAria} className="h-full w-full object-cover" />
+              ) : (
+                <span className="material-symbols-outlined text-lg" aria-hidden="true">
+                  person
+                </span>
+              )}
             </span>
           </Link>
         </nav>

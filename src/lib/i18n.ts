@@ -81,6 +81,25 @@ export const STRINGS = {
     errorInvalidEmail: "Format email tidak valid.",
     signupConfirmEmail:
       "Pendaftaran berhasil. Cek kotak masuk email Anda untuk mengonfirmasi akun.",
+    forgotTitle: "Lupa Sandi",
+    forgotBody:
+      "Masukkan email terdaftarmu. Kami kirim tautan untuk mengatur ulang kata sandi.",
+    forgotEmailLabel: "Email",
+    forgotEmailPlaceholder: "email@contoh.com",
+    forgotSubmit: "Kirim Tautan Reset",
+    forgotSent:
+      "Jika email terdaftar, tautan reset kata sandi akan terkirim ke kotak masukmu.",
+    backToLogin: "Kembali ke Masuk",
+    resetTitle: "Buat Kata Sandi Baru",
+    resetBody: "Masukkan kata sandi baru untuk akunmu.",
+    resetPasswordNew: "Kata sandi baru",
+    resetPasswordConfirm: "Konfirmasi kata sandi",
+    resetPasswordMin: "Kata sandi minimal 6 karakter.",
+    resetPasswordMismatch: "Konfirmasi kata sandi tidak cocok.",
+    resetSuccess: "Kata sandi berhasil diubah. Silakan masuk dengan kata sandi baru.",
+    resetError: "Gagal mengubah kata sandi. Tautan mungkin sudah kedaluwarsa, coba lagi.",
+    resetSubmit: "Perbarui Kata Sandi",
+    resetButton: "Masuk setelah mengubah kata sandi",
   },
   profil_errors: {
     unauthorized: "Sesi tidak ditemukan. Silakan masuk kembali.",

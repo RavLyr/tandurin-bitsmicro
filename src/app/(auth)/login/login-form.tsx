@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { STRINGS } from "@/lib/i18n";
 import { useToast } from "@/components/ui/toaster";
@@ -119,12 +120,12 @@ export function LoginForm() {
         </div>
 
         <div className="flex w-full justify-end">
-          <a
-            href="#"
+          <Link
+            href="/lupa-sandi"
             className="font-label-sm rounded px-1 text-[10px] uppercase tracking-wider text-on-surface-variant underline decoration-1 underline-offset-4 hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary"
           >
             {STRINGS.auth.forgotPassword}
-          </a>
+          </Link>
         </div>
 
         {error ? (
