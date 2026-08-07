@@ -9,6 +9,14 @@ export const STRINGS = {
     delete: "Hapus",
     loading: "Memuat...",
   },
+  errors: {
+    defaultTitle: "Terjadi kesalahan",
+    defaultBody: "Sesuatu tidak berjalan seperti seharusnya. Coba lagi nanti.",
+    retry: "Coba lagi",
+    notFoundTitle: "Halaman tidak ditemukan",
+    notFoundBody: "Halaman yang Anda cari tidak ada atau telah dipindahkan.",
+    backHome: "Kembali ke Beranda",
+  },
   brand: {
     name: "Tanduri.",
     tagline: "Solusi Tani Zaman Saiki",
