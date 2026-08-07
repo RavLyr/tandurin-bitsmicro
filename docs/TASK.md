@@ -214,7 +214,7 @@ end $$;
 **Verification:** full flow per T-301 → `select count(*) from tasks where conversation_id = X` ≥5; re-confirm → no duplicate rows (idempotent); due_dates all `>= today` Asia/Jakarta.
 
 ### T-303: Kanban API (F-06)
-- [ ] **T-303** — Kanban API (F-06)
+- [x] **T-303** — Kanban API (F-06)
 **Files:** `src/app/api/tasks/route.ts`, `src/app/api/tasks/update/route.ts`, `src/app/api/tasks/[id]/comment/route.ts`, `src/app/api/tasks/[id]/route.ts` (new).
 **Steps:**
 1. `GET /api/tasks?land_id=&status=`: session-gate; return tasks ordered `status, position asc` (client-side Supabase read with RLS is also acceptable — pick one, document in route). 
