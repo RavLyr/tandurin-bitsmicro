@@ -64,6 +64,15 @@ export const STRINGS = {
     passwordPlaceholderLong: "Masukkan kata sandi",
     haveAccount: "Sudah punya akun?",
     login: "Masuk",
+    submitting: "Memproses...",
+    errorDuplicateEmail: "Email sudah terdaftar.",
+    errorWrongPassword: "Email atau kata sandi salah.",
+    errorGoogleBlocked: "Terjadi kendala saat masuk dengan Google, gunakan email dan kata sandi.",
+    errorIdentityConflict: "Email sudah digunakan dengan metode lain. Masuk dengan metode sebelumnya.",
+    errorNetwork: "Gagal terhubung, periksa koneksi internet Anda.",
+    errorInvalidEmail: "Format email tidak valid.",
+    signupConfirmEmail:
+      "Pendaftaran berhasil. Cek kotak masuk email Anda untuk mengonfirmasi akun.",
   },
   dashboard: {
     title: "Papan Tugas",
