@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AppHeader } from "@/components/layout/app-header";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { cleanAssistantContent } from "@/components/chat/chat-thread";
+import { LandGate } from "@/components/land-gate";
 import { Markdown } from "@/components/markdown";
 import { Badge } from "@/components/ui/badge";
 import { ConfirmDialog } from "@/components/ui/dialog";
@@ -120,7 +121,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
         {isAssistant ? (
           <>
             <MessageBadges metadata={message.metadata} />
-            <Markdown content={message.content} />
+            <Markdown content={cleanAssistantContent(message.content)} />
           </>
         ) : (
           <p className="font-body text-sm text-on-primary">{message.content}</p>
@@ -262,7 +263,8 @@ export default function RiwayatPage() {
     <>
       <AppHeader activePath="riwayat" />
       <main className="w-full pt-16">
-        <div className="flex w-full flex-col px-margin-mobile py-8 md:px-margin-desktop md:py-16">
+        <LandGate>
+          <div className="flex w-full flex-col px-margin-mobile py-8 md:px-margin-desktop md:py-16">
           <div className="mb-14 flex flex-col justify-between gap-8 md:flex-row md:items-end">
             <div className="flex flex-col gap-4">
               <h1 className="font-display text-3xl font-bold uppercase tracking-tight text-on-surface md:text-5xl">
@@ -433,7 +435,8 @@ export default function RiwayatPage() {
               ) : null}
             </>
           )}
-        </div>
+          </div>
+        </LandGate>
       </main>
 
       <ConfirmDialog

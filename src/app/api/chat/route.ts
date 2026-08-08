@@ -53,9 +53,27 @@ export async function POST(request: NextRequest) {
 
   const service = createServiceClient();
 
-  // Resolve or create the conversation.
+  // Resolve or create the conversation. `createdNew` tracks whether the
+  // conversation was created by this request (used to clean up dead
+  // conversations when the first AI turn fails).
   const requestedId = body.conversation_id ?? null;
+  const createdNew = !requestedId;
   let conversationId: string;
+
+  // Resolve the effective land: explicit land_id, else the active land.
+  // Tasks planned later inherit this land id so the board + land card counts
+  // stay consistent (previously chat tasks had land_id = null).
+  let landId = body.land_id ?? null;
+  if (!landId && !requestedId) {
+    const { data: activeLand } = await service
+      .from("lands")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("is_active", true)
+      .maybeSingle();
+    if (activeLand) landId = activeLand.id;
+  }
+
   if (requestedId) {
     const { data: conv, error } = await service
       .from("conversations")
@@ -68,10 +86,9 @@ export async function POST(request: NextRequest) {
     }
     conversationId = requestedId;
   } else {
-    const land_id = body.land_id ?? null;
     const { data: conv, error } = await service
       .from("conversations")
-      .insert({ user_id: user.id, land_id, title: message.slice(0, 60) })
+      .insert({ user_id: user.id, land_id: landId, title: message.slice(0, 60) })
       .select("id")
       .single();
     if (error || !conv) {
@@ -129,9 +146,8 @@ export async function POST(request: NextRequest) {
     }
   }
 
-// Resolve context land summary (explicit land_id, else active land).
+// Resolve context land summary (the effective land id resolved above).
   const context: { landSummary?: string } = {};
-  const landId = body.land_id ?? null;
   const landBase = service
     .from("lands")
     .select("name, location, area_m2, media, water, sunlight, budget_idr, experience")
@@ -191,7 +207,7 @@ export async function POST(request: NextRequest) {
           context,
           supabase: service,
           userId: user.id,
-          landId: body.land_id ?? null,
+          landId,
           conversationId,
           image,
           imagePath,
@@ -226,6 +242,26 @@ export async function POST(request: NextRequest) {
         send({ type: "done" });
       } catch (err) {
         console.error("[api/chat] stream error:", err);
+        // A brand-new conversation whose first AI turn failed is a dead
+        // conversation (F-02): silently delete it so it never appears in the
+        // sidebar/riwayat. Keep the fallback message only for established
+        // conversations (F-02 AC-6). Tasks FK-guard the delete: only remove if
+        // no tasks were created yet.
+        if (createdNew) {
+          const { data: linkedTasks } = await service
+            .from("tasks")
+            .select("id")
+            .eq("conversation_id", conversationId)
+            .limit(1);
+          if (!linkedTasks || linkedTasks.length === 0) {
+            await service
+              .from("conversations")
+              .delete()
+              .eq("id", conversationId);
+            send({ type: "deleted" });
+            return;
+          }
+        }
         // Fallback assistant message persisted (F-02 AC-6).
         await service.from("messages").insert({
           conversation_id: conversationId,

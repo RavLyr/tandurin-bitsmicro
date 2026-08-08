@@ -6,6 +6,7 @@ import { AppHeader } from "@/components/layout/app-header";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { ChatComposer } from "@/components/chat/chat-composer";
 import { ChatThread, cleanAssistantContent, type ChatMessage, type MessageMetadata } from "@/components/chat/chat-thread";
+import { LandGate } from "@/components/land-gate";
 import { createClient } from "@/lib/supabase/client";
 import { STRINGS } from "@/lib/i18n";
 
@@ -202,6 +203,13 @@ export function ChatClient() {
               conversationIdRef.current = event.id;
               setConversationId(event.id);
               router.replace(`/chat?conversation_id=${event.id}`);
+            } else if (event.type === "deleted") {
+              // Server deleted this brand-new conversation (first AI turn
+              // failed): reset local state so the next send starts fresh.
+              conversationIdRef.current = null;
+              setConversationId(null);
+              router.replace("/chat");
+              throw new Error(STRINGS.chat_errors.aiUnavailable);
             } else if (event.type === "token") {
               accumulated += event.text ?? "";
               setStreamingText(accumulated);
@@ -271,7 +279,8 @@ export function ChatClient() {
     <>
       <AppHeader activePath="chat" />
       <main className="w-full pt-16">
-        <div className="relative flex w-full min-h-[calc(100vh-64px)] flex-col md:flex-row">
+        <LandGate>
+          <div className="relative flex w-full min-h-[calc(100vh-64px)] flex-col md:flex-row">
           <aside
             className={`absolute z-20 flex h-[calc(100vh-64px-56px)] w-full flex-shrink-0 flex-col overflow-hidden border-r border-outline-variant bg-surface transition-transform duration-300 md:static md:h-[calc(100vh-64px)] md:w-[350px] md:translate-x-0 lg:w-[400px] ${
               sidebarOpen ? "translate-x-0" : "-translate-x-full"
@@ -323,6 +332,7 @@ export function ChatClient() {
                   <button
                     key={conv.id}
                     type="button"
+                    aria-label={`${conv.title} · ${formatSidebarDate(conv.updated_at)}`}
                     onClick={() => selectConversation(conv.id)}
                     className={`flex flex-col gap-1 rounded-lg border p-3 text-left transition-colors focus:outline-none focus:ring-2 focus:ring-primary ${
                       conv.id === conversationId
@@ -339,7 +349,7 @@ export function ChatClient() {
                       </span>
                     </div>
                     {conv.last_message ? (
-                      <p className="truncate font-body text-sm text-on-surface-variant">
+                      <p className="line-clamp-2 font-body text-sm text-on-surface-variant">
                         {cleanAssistantContent(conv.last_message)}
                       </p>
                     ) : null}
@@ -402,6 +412,7 @@ export function ChatClient() {
             />
           </main>
         </div>
+        </LandGate>
       </main>
       <BottomNav activePath="chat" />
     </>

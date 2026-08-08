@@ -5,6 +5,7 @@ import { AppHeader } from "@/components/layout/app-header";
 import { AvatarUpload } from "@/components/profile/avatar-upload";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/use-toast";
+import { createClient } from "@/lib/supabase/client";
 import { STRINGS } from "@/lib/i18n";
 
 /**
@@ -145,6 +146,26 @@ export default function ProfilPage() {
       await fetch("/api/auth/logout", { method: "POST" });
     } finally {
       window.location.href = "/login";
+    }
+  };
+
+  const [sendingReset, setSendingReset] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+
+  const handleSendResetPassword = async () => {
+    if (!email || sendingReset) return;
+    setSendingReset(true);
+    try {
+      const supabase = createClient();
+      const base = (process.env.NEXT_PUBLIC_APP_URL ?? window.location.origin).replace(/\/$/, "");
+      const redirectTo = `${base}/auth/callback?next=/reset-password`;
+      const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+      if (error) throw error;
+      setResetSent(true);
+    } catch {
+      toast(STRINGS.profil.changePasswordFailed, "danger");
+    } finally {
+      setSendingReset(false);
     }
   };
 
@@ -332,6 +353,32 @@ export default function ProfilPage() {
                 <div className="sticky top-24">
                   <section>
                     <SectionTitle number="03" label={STRINGS.profil.sectionSecurityTitle} />
+                    <div className="mb-6 rounded-lg border border-outline-variant bg-surface p-8">
+                      <h3 className="mb-2 font-headline text-2xl font-bold text-on-surface">
+                        {STRINGS.profil.changePasswordTitle}
+                      </h3>
+                      <p className="mb-6 font-body text-base text-on-surface-variant">
+                        {STRINGS.profil.changePasswordBody}
+                      </p>
+                      {resetSent ? (
+                        <p className="mb-4 font-body text-sm text-primary" role="status">
+                          {STRINGS.profil.changePasswordSent}
+                        </p>
+                      ) : null}
+                      <button
+                        type="button"
+                        onClick={() => void handleSendResetPassword()}
+                        disabled={sendingReset || !email}
+                        className="flex w-full items-center justify-center gap-2 rounded border-2 border-primary bg-primary px-6 py-3 font-label text-sm uppercase text-on-primary transition-all duration-300 hover:bg-surface hover:text-primary disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                      >
+                        <span className="material-symbols-outlined text-sm" aria-hidden="true">
+                          key
+                        </span>
+                        <span>
+                          {sendingReset ? STRINGS.common.loading : STRINGS.profil.changePasswordButton}
+                        </span>
+                      </button>
+                    </div>
                     <div className="rounded-lg border border-error/20 bg-error-container p-8">
                       <h3 className="mb-4 font-headline text-2xl font-bold text-error">
                         {STRINGS.profil.dangerTitle}

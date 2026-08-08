@@ -171,6 +171,15 @@ export async function GET() {
     if (task.land_id) taskCounts[task.land_id] = (taskCounts[task.land_id] ?? 0) + 1;
   }
 
+  // Legacy tasks (created before T-301 linked chat to a land) may have
+  // land_id = null; attribute them to the active land so the land card count
+  // matches the board's unfiltered "Semua Lahan" view.
+  const activeLand = (lands ?? []).find((land) => land.is_active);
+  const unassigned = (tasks ?? []).filter((task) => !task.land_id).length;
+  if (activeLand && unassigned > 0) {
+    taskCounts[activeLand.id] = (taskCounts[activeLand.id] ?? 0) + unassigned;
+  }
+
   const items = (lands ?? []).map((land) => ({
     ...land,
     task_count: taskCounts[land.id] ?? 0,

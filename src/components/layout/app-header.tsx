@@ -58,7 +58,7 @@ export function AppHeader({ activePath }: { activePath?: ProtectedPathKey }) {
           >
             <Logo className="h-8 w-8 rounded-lg" />
           </Link>
-          <div className="relative hidden md:block">
+          <div className="relative min-w-0">
             <LandSwitcher />
           </div>
         </div>

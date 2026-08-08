@@ -30,8 +30,11 @@ export const STRINGS = {
     landSwitcherAria: "Pilih lahan aktif",
     landSwitcherLoading: "Memuat lahan...",
     landSwitcherEmpty: "Belum ada lahan",
+    landSwitcherEmptyHint: "Tambahkan lahan dulu — tempat menanammu seperti pekarangan, balkon, atau pot.",
+    landSwitcherEmptyCta: "Tambah Lahan",
     landSwitcherManage: "Kelola Lahan",
     landSwitcherCheckAria: "Lahan aktif",
+    landSwitcherActiveLabel: "Lahan aktif",
     chatCta: "Chat Tanduri",
     guideAria: "Lihat panduan singkat",
     navAria: "Navigasi utama",
@@ -54,16 +57,14 @@ export const STRINGS = {
     lahan: "LAHAN",
   },
   auth: {
-    emailLabel: "SUREL",
+    emailLabel: "Email",
     emailPlaceholder: "email@contoh.com",
-    passwordLabel: "KATA SANDI",
+    passwordLabel: "Kata Sandi",
     passwordPlaceholder: "••••••••",
     showPassword: "Tampilkan kata sandi",
     hidePassword: "Sembunyikan kata sandi",
-    forgotPassword: "LUPA SANDI?",
+    forgotPassword: "Lupa kata sandi?",
     signIn: "MASUK",
-    separator: "atau",
-    google: "Lanjutkan dengan Google",
     noAccount: "Belum punya akun?",
     signUp: "Daftar",
     nameLabel: "Nama (opsional)",
@@ -76,13 +77,12 @@ export const STRINGS = {
     submitting: "Memproses...",
     errorDuplicateEmail: "Email sudah terdaftar.",
     errorWrongPassword: "Email atau kata sandi salah.",
-    errorGoogleBlocked: "Terjadi kendala saat masuk dengan Google, gunakan email dan kata sandi.",
     errorIdentityConflict: "Email sudah digunakan dengan metode lain. Masuk dengan metode sebelumnya.",
     errorNetwork: "Gagal terhubung, periksa koneksi internet Anda.",
     errorInvalidEmail: "Format email tidak valid.",
     signupConfirmEmail:
       "Pendaftaran berhasil. Cek kotak masuk email Anda untuk mengonfirmasi akun.",
-    forgotTitle: "Lupa Sandi",
+    forgotTitle: "Lupa Kata Sandi",
     forgotBody:
       "Masukkan email terdaftarmu. Kami kirim tautan untuk mengatur ulang kata sandi.",
     forgotEmailLabel: "Email",
@@ -246,6 +246,12 @@ export const STRINGS = {
     dangerBody:
       "Tindakan di bawah ini akan mengakhiri sesi Anda saat ini. Pastikan semua perubahan telah disimpan.",
     logout: "Keluar dari Akun",
+    changePasswordTitle: "Ganti Kata Sandi",
+    changePasswordBody:
+      "Kami kirimkan tautan penggantian kata sandi ke emailmu. Buka tautan itu untuk membuat kata sandi baru.",
+    changePasswordButton: "Kirim Tautan Reset",
+    changePasswordSent: "Tautan reset kata sandi terkirim. Periksa kotak masuk emailmu.",
+    changePasswordFailed: "Gagal mengirim tautan reset. Periksa koneksi internetmu.",
   },
   chat_errors: {
     unauth: "Sesi berakhir, silakan login kembali.",
@@ -254,6 +260,13 @@ export const STRINGS = {
     aiUnavailable: "Layanan AI sedang tidak tersedia, coba lagi nanti",
     noLand:
       "Tambahkan lahanmu dulu di halaman Lahan, atau ceritakan kondisinya langsung",
+  },
+  landGate: {
+    title: "Tambahkan lahan dulu",
+    body: "Tanduri perlu tahu lahanmu — pekarangan, balkon, atau pot — supaya bisa memberi saran, jadwal, dan rekomendasi yang sesuai. Tidak perlu detail: beri nama dan luas saja sudah cukup.",
+    cta: "Tambah Lahan Sekarang",
+    ctaAria: "Buka halaman lahan untuk menambahkan lahan",
+    loading: "Memeriksa lahanmu...",
   },
   lands: {
     title: "Lahan Saya",
@@ -542,6 +555,7 @@ export const STRINGS = {
       cta: "Mulai Gratis",
     },
     footer: {
+      navAria: "Navigasi footer",
       credit:
         "Dibuat oleh Satria Firm Vibers — Universitas Diponegoro untuk Bitsmikro Innovative Vibecode 2026",
       signIn: "Masuk",

@@ -27,7 +27,7 @@ export function Footer() {
         </p>
 
         <nav
-          aria-label={STRINGS.landing.header.navAria}
+          aria-label={STRINGS.landing.footer.navAria}
           className="flex items-center gap-6 font-semibold uppercase"
         >
           <Link
