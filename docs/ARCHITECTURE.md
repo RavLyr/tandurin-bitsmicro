@@ -46,9 +46,9 @@ flowchart LR
         RT[Realtime]
     end
 
-    subgraph LLM[Gemini 2.5 Flash<br/>@google/genai SDK]
-        AGENT[Orchestrator + Agronomist<br/>+ Task Planner]
-        TOOLS[tools:<br/>weather_lookup,<br/>search_references,<br/>generate_tasks]
+    subgraph LLM[Gemini 2.5 Flash<br/>@google/adk + @google/genai]
+        AGENT[OrchestratorAgent + AgronomistAgent + TaskPlannerAgent<br/>(LlmAgent instances)]
+        TOOLS[FunctionTools:<br/>weather_lookup,<br/>search_references,<br/>generate_tasks]
     end
 
     OWM[OpenWeatherMap]
@@ -76,42 +76,48 @@ Notes on the diagram:
 
 ## 3. Agent Architecture (ADK pattern)
 
-ADR-001: implement the Google Agent Development Kit multi-agent hierarchy with the Gemini SDK JS function-calling surface inside the API routes. No separate orchestrator service.
+ADR-001: implement the Google Agent Development Kit multi-agent hierarchy inside the API routes — `@google/adk` agent definitions (`LlmAgent` + `FunctionTool`) bridged to `@google/genai` execution via a serverless adapter (`src/lib/agents/core/runner.ts`). No separate orchestrator service.
 
 ### 3.1 Hierarchy
 
 ```mermaid
 flowchart TD
-    Orch["`**Orchestrator agent**
+    Orch["`**Orchestrator (LlmAgent)**
     intent, delegation,
     session & context management`"]
 
-    Agr["`**Agronomist agent**
-    land analysis, crop recommendations,
+    Agr["`**Agronomist (LlmAgent)**
+    land analysis, crop recommendations`"]
+
+    Dia["`**Diagnosis (LlmAgent)**
     photo diagnosis (vision)`"]
 
-    Tsk["`**Task Planner agent**
+    Tsk["`**Task Planner (LlmAgent)**
     plan -> structured tasks`"]
 
-    T1["`weather_lookup`"]
-    T2["`search_references`"]
-    T3["`generate_tasks`"]
+    T1["`weather_lookup (FunctionTool)`"]
+    T2["`search_references (FunctionTool)`"]
+    T3["`generate_tasks (FunctionTool)`"]
 
-    Orch -- "delegate agronomic intents" --> Agr
-    Orch -- "delegate confirmation" --> Tsk
-    Agr -- "calls" --> T1
-    Agr -- "calls" --> T2
-    Tsk -- "calls" --> T3
+    Orch -- "subAgents" --> Agr
+    Orch -- "subAgents" --> Dia
+    Orch -- "subAgents" --> Tsk
+    Agr -- "tools" --> T1
+    Agr -- "tools" --> T2
+    Tsk -- "tools" --> T3
 ```
 
-- **Orchestrator (root):** analyzes intent, decides whether the turn belongs to Agronomist (advice/recommendation/photo) or Task Planner (confirm plan → tasks), and manages session/context. Simple questions are answered inline; tool-requiring intents are delegated.
-- **Agronomist (sub-agent):** land analysis, crop recommendation, photo diagnosis. Calls `weather_lookup` and `search_references`.
-- **Task Planner (sub-agent):** converts a confirmed plan into tasks via `generate_tasks`.
-- **Vision handled inline:** photo diagnosis runs inside the Agronomist as a single Gemini multimodal call (image data part + diagnosis system prompt). There is no separate vision model. Image data is reused from storage on follow-ups, never re-uploaded (F-04).
+- **Orchestrator (root, LlmAgent):** analyzes intent, decides whether the turn belongs to Agronomist (advice/recommendation), Diagnosis (photo), or Task Planner (confirm plan → tasks), and manages session/context. Simple questions are answered inline; tool-requiring intents are delegated via `subAgents`.
+- **Agronomist (sub-agent, LlmAgent):** land analysis and crop recommendation. Calls `weather_lookup` and `search_references`.
+- **Diagnosis (sub-agent, LlmAgent):** photo diagnosis — a dedicated agent (previously handled inline by the Agronomist). Runs a single Gemini multimodal call (image data part + diagnosis system prompt); no separate vision model, and no tools. Image data is reused from storage on follow-ups, never re-uploaded (F-04).
+- **Task Planner (sub-agent, LlmAgent):** converts a confirmed plan into tasks via `generate_tasks`.
+- Edges follow the ADK convention: Orchestrator connects to sub-agents via `subAgents`; each agent wires its tools via `tools`.
 
 ### 3.2 Implementation
 
-Every agent is a system prompt (Indonesian-friendly, given the UI language) plus a declared `GeminiFunctionDeclaration` set passed to `generateContentStream`.
+Every agent is an `@google/adk` `LlmAgent`: a system prompt (Indonesian-friendly, given the UI language) plus a `tools: FunctionTool[]` array. A `FunctionTool` wraps a name, description, Zod input schema, and executor; the ADK function-calling loop binds the model to declared tools and dispatches calls to the executors.
+
+**Serverless adapter (`src/lib/agents/core/runner.ts`).** `@google/adk`'s `InMemoryRunner` keeps session state in memory, which does not persist across Vercel serverless requests. A thin adapter bridges ADK agent definitions with `@google/genai` execution: it maps each LlmAgent's system prompt and FunctionTool schemas onto the Gemini SDK function-calling surface, runs the turn server-side, and streams the result. Session/context is still rebuilt per request from Supabase (§3.4), so the server stays stateless (NFR-03).
 
 - `weather_lookup` → OpenWeatherMap current weather + 5-day forecast by lat/lon; server fetches via `OPENWEATHER_API_KEY`.
 - `search_references` → Gemini `google_search` grounding (no extra key); sources appended to the recommendation.
@@ -156,7 +162,7 @@ Every agent is a system prompt (Indonesian-friendly, given the UI language) plus
 
 ### 3.3 Tool registry (NFR-08 portability)
 
-Tools live in a dedicated module `lib/agents/tools/` — one file per tool (`weather_lookup.ts`, `search_references.ts`, `generate_tasks.ts`). Each exports its function declaration and its executor. Agents build their tool set by registry lookup, never by inline code. Adding a tool = adding one file + one registration line; the agents/council remain unchanged.
+Tools live in `src/lib/agents/tools/` as `FunctionTool` instances with Zod input schemas (`weather_lookup.ts`, `search_references.ts`, `generate_tasks.ts`). Each exports its FunctionTool (name + description + Zod schema + executor). Agents register tools directly on the agent via the `agent.tools` array — unified registration, no registry indirection. Adding a tool = adding one file + one entry in the owning agent's `tools` array; the agents and runner remain unchanged.
 
 ### 3.4 Session & context
 

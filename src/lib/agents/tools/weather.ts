@@ -1,11 +1,32 @@
+import { FunctionTool } from "@google/adk";
 import { Type, type FunctionDeclaration } from "@google/genai";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { z } from "zod";
 
 /**
  * Weather tool (F-03, T-201 step 1). Cache-first (30 min TTL) OpenWeatherMap
  * current weather + 5-day forecast. Returns null on any failure so the agent
  * degrades gracefully (F-03 §7: proceed + note "data cuaca tidak tersedia").
  */
+
+/**
+ * ADK FunctionTool (ADK-orchestrator refactor). Supabase is injected at call
+ * time through the toolContext session state by the serverless runner.
+ */
+export const weatherTool = new FunctionTool({
+  name: "weather_lookup",
+  description:
+    "Cek kondisi cuaca saat ini dan prakiraan 5 hari untuk koordinat lahan. Dipakai saat pengguna bertanya tentang jadwal tanam, penyiraman, atau perlindungan tanaman dari hujan/panas.",
+  parameters: z.object({
+    latitude: z.number().describe("Garis lintang lahan dalam derajat desimal."),
+    longitude: z.number().describe("Garis bujur lahan dalam derajat desimal."),
+  }),
+  execute: async (args, toolContext) => {
+    const supabase = toolContext?.state.get("supabase") as SupabaseClient | undefined;
+    if (!supabase) return null;
+    return weather_executor(args, supabase);
+  },
+});
 
 export const weather_declaration: FunctionDeclaration = {
   name: "weather_lookup",

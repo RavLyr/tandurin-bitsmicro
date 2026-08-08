@@ -1,9 +1,24 @@
+import { FunctionTool } from "@google/adk";
 import { GoogleGenAI, Type, type FunctionDeclaration } from "@google/genai";
+import { z } from "zod";
 
 /**
  * Web search tool (F-03, T-201 step 2) via Gemini `google_search` grounding —
  * no extra API key. Returns top results as { title, url, snippet }.
  */
+
+/**
+ * ADK FunctionTool (ADK-orchestrator refactor). No injected state needed.
+ */
+export const searchTool = new FunctionTool({
+  name: "search_references",
+  description:
+    "Cari referensi terbaru dari web untuk memperkuat rekomendasi (mis. harga pasar, hama musiman, praktik tanam). Kembalikan daftar sumber yang bisa dikutip.",
+  parameters: z.object({
+    query: z.string().describe("Topik pencarian dalam Bahasa Indonesia atau istilah tanaman."),
+  }),
+  execute: (args) => search_executor(args),
+});
 
 export const search_declaration: FunctionDeclaration = {
   name: "search_references",

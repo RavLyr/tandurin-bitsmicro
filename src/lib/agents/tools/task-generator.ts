@@ -1,10 +1,36 @@
+import { FunctionTool } from "@google/adk";
 import { Type, type FunctionDeclaration } from "@google/genai";
+import { z } from "zod";
 
 /**
  * Task generator (F-05, T-201 step 3): deterministic planner converting a
  * confirmed planting plan into a task list. No LLM call — dates are computed
  * in Asia/Jakarta so the result is always valid.
  */
+
+/**
+ * ADK FunctionTool (ADK-orchestrator refactor). No injected state needed.
+ */
+export const generateTasksTool = new FunctionTool({
+  name: "generate_tasks",
+  description:
+    "Buatkan jadwal tugas tanam (≥5 tugas) dari rencana tanam yang sudah dikonfirmasi pengguna. Urutan fase: olah_lahan → semai → tanam → penyiraman → pemupukan → perawatan → panen.",
+  parameters: z.object({
+    confirmed_plan: z
+      .object({
+        crops: z.array(z.string()).describe("Nama komoditas yang akan ditanam."),
+        planting_window: z
+          .string()
+          .describe("Jendela tanam, mis. '2 minggu lagi' atau tanggal mulai."),
+        experience: z
+          .string()
+          .describe("Tingkat pengalaman petani: beginner/experienced/professional."),
+        land_summary: z.string().optional().describe("Ringkasan kondisi lahan (opsional)."),
+      })
+      .describe("Rencana tanam yang sudah dikonfirmasi pengguna."),
+  }),
+  execute: (args) => generate_tasks_executor(args),
+});
 
 export const generate_tasks_declaration: FunctionDeclaration = {
   name: "generate_tasks",

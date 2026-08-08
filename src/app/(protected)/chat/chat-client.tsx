@@ -127,14 +127,18 @@ export function ChatClient() {
 
   const lastUserMessageRef = useRef<string | null>(null);
   const metadataRef = useRef<MessageMetadata | null>(null);
+  const conversationIdRef = useRef<string | null>(conversationId);
 
   const sendMessage = useCallback(
     async (text: string, imagePath?: string) => {
       lastUserMessageRef.current = text;
+      // Use the ref: the closure's `conversationId` is stale during the same
+      // stream that just revealed the newly-created conversation.
+      const currentConversationId = conversationIdRef.current ?? conversationId;
       const body: { message: string; conversation_id?: string; image_path?: string } = {
         message: text,
       };
-      if (conversationId) body.conversation_id = conversationId;
+      if (currentConversationId) body.conversation_id = currentConversationId;
       if (imagePath) body.image_path = imagePath;
 
       const localId = `local-user-${Date.now()}`;
@@ -142,7 +146,7 @@ export function ChatClient() {
         ...prev,
         {
           id: localId,
-          conversation_id: conversationId ?? "",
+          conversation_id: conversationIdRef.current ?? conversationId ?? "",
           role: "user",
           content: text,
           metadata: null,
@@ -183,13 +187,22 @@ export function ChatClient() {
           for (const chunk of chunks) {
             const line = chunk.split("\n").find((l) => l.startsWith("data: "));
             if (!line) continue;
-            let event: { type?: string; text?: string; data?: unknown };
+            let event: { type?: string; text?: string; data?: unknown; id?: string };
             try {
-              event = JSON.parse(line.slice(6)) as { type?: string; text?: string; data?: unknown };
+              event = JSON.parse(line.slice(6)) as {
+                type?: string;
+                text?: string;
+                data?: unknown;
+                id?: string;
+              };
             } catch {
               continue;
             }
-            if (event.type === "token") {
+            if (event.type === "conversation" && event.id) {
+              conversationIdRef.current = event.id;
+              setConversationId(event.id);
+              router.replace(`/chat?conversation_id=${event.id}`);
+            } else if (event.type === "token") {
               accumulated += event.text ?? "";
               setStreamingText(accumulated);
             } else if (event.type === "metadata") {
@@ -201,19 +214,25 @@ export function ChatClient() {
           }
         }
 
-        // Keep the streamed assistant reply in the thread locally; refresh
-        // the sidebar so the new/updated conversation appears on top.
+        // Keep the streamed assistant reply in the chat; refresh the sidebar so
+        // the new/updated conversation appears on top. Capture the metadata ref
+        // into a local NOW: the finally block below nulls it, and the
+        // setMessages updater runs on a later render, so reading
+        // metadataRef.current inside it would always yield null (contextual
+        // cards — task-summary/recommendation/diagnosis — would only appear
+        // after a reload).
         const assistantId = `local-ai-${Date.now()}`;
+        const finalMetadata = metadataRef.current;
         setMessages((prev) => {
           if (prev.some((m) => m.id === assistantId)) return prev;
           return [
             ...prev,
             {
               id: assistantId,
-              conversation_id: conversationId ?? "",
+              conversation_id: conversationIdRef.current ?? conversationId ?? "",
               role: "assistant",
               content: accumulated.trim() || STRINGS.chat_errors.aiUnavailable,
-              metadata: metadataRef.current,
+              metadata: finalMetadata,
               created_at: new Date().toISOString(),
             },
           ];
@@ -225,7 +244,7 @@ export function ChatClient() {
           ...prev,
           {
             id: `local-err-${Date.now()}`,
-            conversation_id: conversationId ?? "",
+            conversation_id: conversationIdRef.current ?? conversationId ?? "",
             role: "assistant",
             content: STRINGS.chat_errors.aiUnavailable,
             metadata: null,
@@ -240,7 +259,7 @@ export function ChatClient() {
         metadataRef.current = null;
       }
     },
-    [conversationId, loadConversations]
+    [conversationId, loadConversations, router]
   );
   const retryLast = () => {
     if (lastUserMessageRef.current && !isStreaming) {

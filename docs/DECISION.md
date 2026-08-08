@@ -15,11 +15,11 @@ This document captures key technical decisions, their context, options, chosen a
 | Field | Value |
 |-------|-------|
 | Status | **Accepted** |
-| Context | Proposal specifies Google Agent Development Kit (ADK) for multi-agent orchestration. ADK official implementation is Python. Vercel (free tier) supports Node.js/TypeScript only. Team chose single deployment on Vercel for simplicity and 3-day deadline. |
-| Options | A) Python FastAPI + ADK service deployed separately on Render; Next.js on Vercel — 2 deployments, CORS, Render sleep delay. B) Implement ADK architectural pattern (Orchestrator → Sub-Agents → Tools) using `@google/genai` SDK directly in Next.js API routes — no Python needed, one deployment. |
-| Decision | **Option B** — ADK pattern via Gemini SDK JS in Next.js API routes |
-| Rationale | Single deployment (simpler, faster for 3 days), no CORS/sleep issues, full control over tool registration and function calling loop. Google ADK serves as architectural reference; the implementation follows the same agent hierarchy and separation of concerns. |
-| Consequences | Cannot use ADK Python libraries (agent state persistence, built-in tracing); must implement function-calling loop manually (trivial with `@google/genai`). Architecture remains compatible — migrating to Python ADK later would require wrapping the tool registry and system prompts into ADK format. |
+| Context | Proposal specifies Google Agent Development Kit (ADK) for multi-agent orchestration. ADK was originally Python-only, but `@google/adk` (TypeScript) is now GA, so ADK runs natively inside the Node.js/TypeScript stack. Vercel (free tier) supports Node.js/TypeScript only. Team chose single deployment on Vercel for simplicity and 3-day deadline. |
+| Options | A) Python FastAPI + ADK service deployed separately on Render; Next.js on Vercel — 2 deployments, CORS, Render sleep delay. B) Official `@google/adk` (TypeScript) for agent/tool definitions + `@google/genai` SDK for stateless serverless execution in Next.js API routes — one deployment, no Python needed. |
+| Decision | **Option B+** — `@google/adk` definitions + `@google/genai` execution adapter |
+| Rationale | Official ADK framework provides a type-safe `LlmAgent` hierarchy and `FunctionTool` with Zod schema validation; the serverless execution adapter keeps Vercel compatibility because `InMemoryRunner` state does not persist across requests. |
+| Consequences | Uses `@google/adk` for structure (`LlmAgent`, `FunctionTool`, subAgents) and `@google/genai` for execution. The manual function-calling loop is replaced by the adapter in `src/lib/agents/core/runner.ts`. Same API contract, tool names, and system prompts as before — only the framework wrapper changes. |
 
 ## ADR-02: Google Search Integration
 
@@ -202,7 +202,7 @@ This document captures key technical decisions, their context, options, chosen a
 
 | ADR | Decision | Status |
 |-----|----------|--------|
-| ADR-01 | ADK pattern via Gemini SDK JS in Next.js (not Python ADK) | Accepted |
+| ADR-01 | Option B+ — @google/adk definitions + @google/genai execution adapter | Accepted |
 | ADR-02 | Gemini `google_search` grounding | Accepted |
 | ADR-03 | Resend for email | Accepted |
 | ADR-04 | Vercel Cron (daily, per-hour precision) | Accepted |
