@@ -131,16 +131,20 @@ export function ChatClient() {
   const conversationIdRef = useRef<string | null>(conversationId);
 
   const sendMessage = useCallback(
-    async (text: string, imagePath?: string) => {
+    async (text: string, projectCrops?: string[]) => {
       lastUserMessageRef.current = text;
       // Use the ref: the closure's `conversationId` is stale during the same
       // stream that just revealed the newly-created conversation.
       const currentConversationId = conversationIdRef.current ?? conversationId;
-      const body: { message: string; conversation_id?: string; image_path?: string } = {
+      const body: {
+        message: string;
+        conversation_id?: string;
+        project_crops?: string[];
+      } = {
         message: text,
       };
       if (currentConversationId) body.conversation_id = currentConversationId;
-      if (imagePath) body.image_path = imagePath;
+      if (projectCrops && projectCrops.length > 0) body.project_crops = projectCrops;
 
       const localId = `local-user-${Date.now()}`;
       setMessages((prev) => [
@@ -275,6 +279,21 @@ export function ChatClient() {
     }
   };
 
+  // T-024: message text matches the route's PROJECT_INTENT regex; crops array lets the orchestrator build the project deterministically, bypassing the unreliable LLM tool-call.
+  const createProjectFromCrops = useCallback(
+    (crops: string[]) => {
+      void sendMessage(`Buat proyek ${crops.join(", ")}`, crops);
+    },
+    [sendMessage]
+  );
+
+  // T-301/T-302: confirm the live recommendation so the orchestrator generates
+  // the task schedule. "sesuai" matches isAffirmative, so the existing
+  // confirmation path fires — no new route/orchestrator code needed.
+  const confirmSchedule = useCallback(() => {
+    void sendMessage("sesuai");
+  }, [sendMessage]);
+
   return (
     <>
       <AppHeader activePath="chat" />
@@ -404,11 +423,13 @@ export function ChatClient() {
               hasError={hasError}
               onRetry={retryLast}
               onExample={(prompt) => void sendMessage(prompt)}
+              onCreateProject={(crops) => void createProjectFromCrops(crops)}
+              onConfirm={() => void confirmSchedule()}
             />
 
             <ChatComposer
               disabled={isStreaming}
-              onSend={(text, imagePath) => void sendMessage(text, imagePath)}
+              onSend={(text) => void sendMessage(text)}
             />
           </main>
         </div>

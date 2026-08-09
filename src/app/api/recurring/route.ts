@@ -2,6 +2,16 @@ import { createClient } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { STRINGS } from "@/lib/i18n";
+import { z } from "zod";
+
+const recurringCreateSchema = z.object({
+  title: z.string().trim().min(1, "Judul wajib diisi").max(200),
+  description: z.string().trim().max(1000).optional().default(""),
+  category: z.enum(["penyiraman", "pemupukan", "perawatan", "pestisida"]),
+  interval_days: z.number().int().min(1).max(365),
+  time_of_day: z.enum(["pagi", "sore"]).optional().default("pagi"),
+  project_id: z.string().uuid(),
+});
 
 /**
  * Service-role client (server-only env vars). Never import into client code.
@@ -68,4 +78,61 @@ export async function GET(request: NextRequest) {
   });
 
   return NextResponse.json({ templates });
+}
+
+export async function POST(request: NextRequest) {
+  const supabase = await createServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: STRINGS.chat_errors.unauth }, { status: 401 });
+  }
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: STRINGS.projects.invalidBody }, { status: 422 });
+  }
+
+  const parsed = recurringCreateSchema.safeParse(body);
+  if (!parsed.success) {
+    const first = parsed.error.issues[0];
+    return NextResponse.json({ error: first?.message ?? STRINGS.projects.invalidBody }, { status: 422 });
+  }
+  const data = parsed.data;
+
+  const service = createServiceClient();
+
+  const { data: project } = await service
+    .from("projects")
+    .select("id")
+    .eq("id", data.project_id)
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (!project) {
+    return NextResponse.json({ error: STRINGS.projects.notFound }, { status: 404 });
+  }
+
+  const { data: created, error } = await service
+    .from("recurring_task_templates")
+    .insert({
+      user_id: user.id,
+      project_id: data.project_id,
+      title: data.title,
+      description: data.description ?? "",
+      category: data.category,
+      interval_days: data.interval_days,
+      time_of_day: data.time_of_day ?? "pagi",
+      is_active: true,
+    })
+    .select("id, project_id, title, description, category, interval_days, time_of_day, is_active, created_at")
+    .single();
+
+  if (error || !created) {
+    return NextResponse.json({ error: STRINGS.projects.failed }, { status: 500 });
+  }
+  return NextResponse.json({ template: created }, { status: 201 });
 }

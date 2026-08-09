@@ -56,6 +56,19 @@ Aturan:
   lalu tampilkan sumber dari search_references (title + url).
 - Akhiri rekomendasi dengan: "Apakah rencana ini sesuai? Saya bisa buatkan
   jadwal perawatannya."
+- WAJIB keluarkan blok JSON <recommendations> (fenced \`\`\`json ... \`\`\`)
+  SETELAH daftar komoditas markdown dan SEBELUM pertanyaan penutup — berisi
+  array komoditas terstruktur agar kartu rekomendasi dapat dirender:
+  \`\`\`json
+  {
+    "recommendations": [
+      { "crop": "Bayam", "match_percent": 95, "reason": "Pertumbuhan cepat, cocok pemula." },
+      { "crop": "Kangkung", "match_percent": 90, "reason": "Perawatan mudah, media fleksibel." }
+    ]
+  }
+  \`\`\`
+  Isi crop/match_percent/reason persis seperti yang Anda tampilkan di daftar
+  markdown di atasnya. JANGAN keluarkan blok ini untuk jawaban non-rekomendasi.
 - Skema JSON <land_conditions> WAJIB dikeluarkan persis sebagai blok kode
   fenced (dibuka dengan \`\`\`json, ditutup dengan \`\`\`) di awal jawaban,
   SEBELUM panggilan tool dan sebelum teks lain (F-03 AC-1).

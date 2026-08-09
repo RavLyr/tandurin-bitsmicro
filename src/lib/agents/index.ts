@@ -12,7 +12,8 @@ import {
   generate_one_time_tasks_executor,
   type GeneratedOneTimeTaskWithDue,
 } from "./tools/one-time-task-generator";
-import type { GeneratedProject } from "./tools/project-generator";
+import { generate_recurring_templates_executor } from "./tools/recurring-task-generator";
+import { generate_project_executor, type GeneratedProject } from "./tools/project-generator";
 import { STRINGS } from "@/lib/i18n";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -71,6 +72,88 @@ export function extractLandConditions(accumulated: string): LandConditions | nul
   }
 }
 
+/** A single crop suggestion in the agronomist's structured output (F-03). */
+export interface CropRecommendation {
+  crop: string;
+  match_percent: number;
+  reason: string;
+}
+
+/**
+ * Parse crop recommendations straight from the agronomist's markdown output.
+ * This is the reliable path — the AI reliably emits markdown crop lists, but
+ * often skips the optional JSON <recommendations> block. Expected shape:
+ *
+ *   ### 1. Kangkung Darat
+ *   * **Kecocokan:** 95%
+ *   * **Alasan:** Toleran terhadap suhu panas, cepat tumbuh.
+ *   ### 2. Bayam Hijau
+ *   * **Kecocokan:** 90%
+ *   * **Alasan:** Butuh sinar matahari penuh.
+ */
+export function parseRecommendationsFromMarkdown(text: string): CropRecommendation[] | null {
+  const result: CropRecommendation[] = [];
+  // Split on H3 headings (each crop). Match "### <n>. <name>" or "### <name>".
+  const sections = text.split(/^###\s+/m).slice(1);
+  for (const section of sections) {
+    const lines = section.split("\n");
+    const heading = lines[0].trim();
+    const block = lines.slice(1).join("\n");
+
+    // A real crop section always carries a "**Kecocokan:** NN%" line. Without it
+    // the heading is something else (e.g. the AI's "### **Fase 1...** schedule
+    // phases) — skip those so they don't pollute the recommendation card.
+    const percentMatch = block.match(/\*\*Kecocokan:\*\*\s*(\d+)%/);
+    if (!percentMatch) continue;
+    const match_percent = parseInt(percentMatch[1], 10);
+
+    // Strip leading "1. " / "1) " numbering from the heading.
+    const crop = heading.replace(/^\d+[\.\)]\s*/, "").trim();
+    if (!crop) continue;
+
+    const reasonMatch = block.match(/\*\*Alasan:\*\*\s*([\s\S]+?)(?=\n\*|\n###|$)/);
+    const reason = reasonMatch ? reasonMatch[1].trim() : "";
+
+    result.push({ crop, match_percent, reason });
+  }
+  return result.length > 0 ? result : null;
+}
+
+/**
+ * Parse the agronomist's `<recommendations>...</recommendations>` JSON block
+ * into a CropRecommendation array. Mirrors extractLandConditions (F-03 AC-1):
+ * the card needs structured crop data — the markdown text alone won't render.
+ */
+export function extractRecommendations(accumulated: string): CropRecommendation[] | null {
+  // Scan ALL fenced JSON blocks — land_conditions comes first, recommendations
+  // after. Return the first block that carries a `recommendations` array.
+  const blockRe = /```json\s*(\{[\s\S]*?\})\s*```/g;
+  let blockMatch: RegExpExecArray | null;
+  while ((blockMatch = blockRe.exec(accumulated)) !== null) {
+    try {
+      const parsed: unknown = JSON.parse(blockMatch[1]);
+      if (typeof parsed !== "object" || parsed === null) continue;
+      const arr = (parsed as Record<string, unknown>).recommendations;
+      if (!Array.isArray(arr)) continue;
+      const result: CropRecommendation[] = [];
+      for (const item of arr) {
+        if (typeof item !== "object" || item === null) continue;
+        const i = item as Record<string, unknown>;
+        if (typeof i.crop !== "string") continue;
+        result.push({
+          crop: i.crop,
+          match_percent: typeof i.match_percent === "number" ? i.match_percent : 0,
+          reason: typeof i.reason === "string" ? i.reason : "",
+        });
+      }
+      if (result.length > 0) return result;
+    } catch {
+      // Malformed block — keep scanning.
+    }
+  }
+  return null;
+}
+
 /** Short affirmative reply ("sesuai", "ya", "siap", "oke", "setuju", ...). */
 const AFFIRMATIVE_WORDS = [
   "sesuai",
@@ -108,16 +191,6 @@ export function isAffirmative(message: string): boolean {
   if (NEGATION.test(normalized)) return false;
   return wordMatch || SCHEDULING_INTENT.test(normalized);
 }
-
-const TASK_PHASES: TaskPhase[] = [
-  "olah_lahan",
-  "semai",
-  "tanam",
-  "penyiraman",
-  "pemupukan",
-  "perawatan",
-  "panen",
-];
 
 /** Today's date key (YYYY-MM-DD) in Asia/Jakarta. */
 export function jakartaTodayKey(): string {
@@ -310,6 +383,8 @@ export interface RunOrchestratorParams {
   awaitingConfirmation: boolean;
   /** Last assistant message row (id + metadata) for confirmation marking. */
   lastAssistant: { id: string; metadata: Record<string, unknown> | null } | null;
+  /** T-024: explicit crops from the "Buat Proyek" button — when set, the project is built deterministically (no LLM agent). */
+  projectCrops?: string[];
   /** Emits SSE payloads in order (token/metadata). */
   onEvent: (event: OrchestratorEvent) => void;
 }
@@ -327,13 +402,21 @@ interface ProjectCreationParams {
   userId: string;
   landId: string | null;
   conversationId: string;
+  /** T-024: explicit crops → deterministic project build (skip LLM agent). */
+  projectCrops?: string[];
   onEvent: (event: OrchestratorEvent) => void;
 }
 
 /**
- * Project creation flow: run the Project Creator agent, persist the project +
- * one-time tasks + recurring templates, stream the summary. Returns null when
- * the agent produced no project (caller falls through to the default path).
+ * Project creation flow: resolve a project skeleton (one-time tasks +
+ * recurring templates), persist it + its tasks, and stream the summary.
+ *
+ * Two paths:
+ *  - Deterministic (projectCrops set): build the project straight from the
+ *    supplied crops via generate_project_executor — no LLM agent, so it can't
+ *    fail to emit a tool-call. Used by the "Buat Proyek" button.
+ *  - Agent (no projectCrops): run the Project Creator LLM agent. Returns null
+ *    when the agent produces no project (caller falls through to default path).
  */
 async function runProjectCreationFlow({
   message,
@@ -343,17 +426,35 @@ async function runProjectCreationFlow({
   userId,
   landId,
   conversationId,
+  projectCrops,
   onEvent,
 }: ProjectCreationParams): Promise<RunOrchestratorResult | null> {
-  let result: RunProjectCreatorResult;
-  try {
-    result = await runProjectCreator({ prompt: message, history, context, supabase });
-  } catch (err) {
-    console.error("[agents] project creator error:", err);
-    return null;
+  let project: GeneratedProject | null;
+  let crops: string[];
+
+  if (projectCrops && projectCrops.length > 0) {
+    // Deterministic path: the user accepted a recommendation — build the
+    // project from its crops directly, no LLM round-trip.
+    const crop = projectCrops[0];
+    project = generate_project_executor({
+      crop,
+      project_name: `Proyek ${crop}`,
+      description: `Proyek tanam ${projectCrops.join(", ")} di lahan aktif.`,
+    });
+    crops = projectCrops;
+  } else {
+    let result: RunProjectCreatorResult;
+    try {
+      result = await runProjectCreator({ prompt: message, history, context, supabase });
+    } catch (err) {
+      console.error("[agents] project creator error:", err);
+      return null;
+    }
+    if (!result.project) return null;
+    project = result.project;
+    crops = result.crops;
   }
 
-  const { project, crops } = result;
   if (!project) return null;
 
   if (!landId) {
@@ -470,6 +571,72 @@ async function runProjectCreationFlow({
   };
 }
 
+interface EnsureProjectParams {
+  /** Existing project the conversation is already linked to (null = none). */
+  existingProjectId: string | null;
+  /** Recommendation message metadata — crops come from here. */
+  recommendationMetadata: Record<string, unknown> | null;
+  supabase: SupabaseClient;
+  userId: string;
+  landId: string | null;
+  conversationId: string;
+}
+
+/**
+ * Ensure the conversation has a project before generating tasks, so tasks are
+ * never left orphaned on the board (T-024). If the conversation is already
+ * linked to a project, reuse it; otherwise create a new project from the
+ * recommendation's crops and link the conversation to it.
+ */
+async function ensureProjectForRecommendation({
+  existingProjectId,
+  recommendationMetadata,
+  supabase,
+  userId,
+  landId,
+  conversationId,
+}: EnsureProjectParams): Promise<string | null> {
+  // Reuse the project the conversation is already linked to.
+  if (existingProjectId) return existingProjectId;
+
+  // Extract structured crops from the recommendation metadata.
+  const recs = recommendationMetadata?.recommendations;
+  let crops: string[] = [];
+  if (Array.isArray(recs)) {
+    crops = recs
+      .map((r) => (typeof r === "object" && r !== null ? (r as Record<string, unknown>).crop : undefined))
+      .filter((c): c is string => typeof c === "string" && c.trim() !== "");
+  }
+  if (crops.length === 0) return null;
+
+  const crop = crops[0];
+  const project = generate_project_executor({
+    crop,
+    project_name: `Proyek ${crop}`,
+    description: `Proyek tanam ${crops.join(", ")} di lahan aktif.`,
+  });
+
+  const { data: created, error } = await supabase
+    .from("projects")
+    .insert({ user_id: userId, land_id: landId, name: project.name, description: project.description })
+    .select("id")
+    .single();
+
+  if (error || !created) {
+    console.error("[agents] ensureProject project insert error:", error);
+    return null;
+  }
+
+  // Link the conversation to the new project.
+  if (conversationId) {
+    await supabase
+      .from("conversations")
+      .update({ project_id: created.id })
+      .eq("id", conversationId);
+  }
+  return created.id;
+}
+
 /**
  * Route the user message to the right agent and drive the feature behaviors.
  *
@@ -491,6 +658,7 @@ export async function runOrchestrator({
   imagePath,
   awaitingConfirmation,
   lastAssistant,
+  projectCrops,
   onEvent,
 }: RunOrchestratorParams): Promise<RunOrchestratorResult> {
   // T-024: surface the active project to downstream agents so the
@@ -507,7 +675,25 @@ export async function runOrchestrator({
     }
   }
 
-  if (PROJECT_INTENT.test(message) && !awaitingConfirmation) {
+  // Explicit "Buat Proyek" button click — ALWAYS creates a project, even when
+  // a recommendation is pending confirmation. The button is the user's deliberate
+  // intent, so it must not be blocked by the confirmation-state guard below.
+  if (projectCrops && projectCrops.length > 0) {
+    const creation = await runProjectCreationFlow({
+      message,
+      history,
+      context: agentContext,
+      supabase,
+      userId,
+      landId,
+      conversationId,
+      projectCrops,
+      onEvent,
+    });
+    if (creation) return creation;
+  } else if (PROJECT_INTENT.test(message) && !awaitingConfirmation) {
+    // Typed project intent — only when not mid-confirmation, to avoid conflicting
+    // with the task-generation path right below.
     const creation = await runProjectCreationFlow({
       message,
       history,
@@ -530,8 +716,35 @@ export async function runOrchestrator({
       })
       .eq("id", lastAssistant.id);
 
+    // T-024: ensure the conversation has a project so tasks are never orphaned
+    // on the board — reuse the linked project, or create one from the
+    // recommendation's crops. Tasks get assigned to this project below.
+    const resolvedProjectId = await ensureProjectForRecommendation({
+      existingProjectId: projectId ?? null,
+      recommendationMetadata: lastAssistant.metadata,
+      supabase,
+      userId,
+      landId,
+      conversationId,
+    });
+
     const interim = STRINGS.chat.taskPlanConfirmed;
     onEvent({ type: "token", text: interim });
+
+    // Crops drive the deterministic schedule. Prefer the structured
+    // recommendation metadata; fall back to the active land name.
+    const recs = lastAssistant.metadata?.recommendations;
+    let crops: string[] = [];
+    if (Array.isArray(recs)) {
+      crops = recs
+        .map((r) => (typeof r === "object" && r !== null ? (r as Record<string, unknown>).crop : undefined))
+        .filter((c): c is string => typeof c === "string" && c.trim() !== "");
+    }
+    if (crops.length === 0) {
+      const fallbackCrop = (agentContext.landSummary?.match(/Nama lahan: ([^\n]+)/)?.[1] ??
+        "Tanaman") as string;
+      crops = [fallbackCrop];
+    }
 
     // T-302: idempotency check — tasks already generated for this conversation?
     const { data: existingTasks } = await supabase
@@ -542,41 +755,26 @@ export async function runOrchestrator({
 
     let tasks: GeneratedTask[] = [];
     if (!existingTasks || existingTasks.length === 0) {
-      try {
-        const planResult = await runTaskPlanner({
-          prompt: message,
-          history,
-          context: agentContext,
-          supabase,
-        });
-        tasks = (planResult.tasks ?? []).filter(
-          (t) =>
-            typeof t.title === "string" &&
-            typeof t.due_date === "string" &&
-            typeof t.phase === "string" &&
-            TASK_PHASES.includes(t.phase)
-        );
-      } catch (err) {
-        console.error("[agents] task planner error:", err);
-      }
+      // Deterministic schedule (same executors the project-creation flow uses):
+      // one-time phases get due dates; recurring phases become templates so
+      // penyiraman/pemupukan/perawatan are NOT one-off board tasks.
+      const oneTimeTasks = generate_one_time_tasks_executor({
+        project_summary: { crops, planting_window: "mulai hari ini", experience: "beginner" },
+      });
 
-      if (tasks.length < 5) {
-        // Partial failure / no output → deterministic fallback (≥5 tasks).
-        const crop = (agentContext.landSummary?.match(/Nama lahan: ([^\n]+)/)?.[1] ??
-          "Tanaman") as string;
-        tasks = fallbackSchedule(crop);
-      }
-
-      tasks = tasks.map((t) => ({
-        ...t,
+      tasks = oneTimeTasks.map((t) => ({
+        title: t.title,
+        description: t.description,
         due_date: clampDueDate(t.due_date),
-        position: t.position ?? 0,
+        phase: t.phase,
+        position: t.position,
       }));
 
       const positionStart = await taskPositionOffset(supabase, userId, landId);
       const rows = tasks.map((t, index) => ({
         user_id: userId,
         land_id: landId,
+        project_id: resolvedProjectId,
         conversation_id: conversationId,
         title: t.title,
         description: t.description ?? "",
@@ -593,6 +791,29 @@ export async function runOrchestrator({
         }
       } catch (err) {
         console.error("[agents] tasks insert throw:", err);
+      }
+
+      // Recurring templates — these power the repeating care schedule.
+      const recurringTemplates = generate_recurring_templates_executor({
+        project_summary: { crops, recurring_categories: ["penyiraman", "pemupukan", "perawatan", "pestisida"] },
+      });
+      const templateRows = recurringTemplates.map((t) => ({
+        user_id: userId,
+        project_id: resolvedProjectId,
+        title: t.title,
+        description: t.description,
+        category: t.category,
+        interval_days: t.interval_days,
+        time_of_day: t.time_of_day,
+        is_active: true,
+      }));
+      if (templateRows.length > 0) {
+        const { error: templatesError } = await supabase
+          .from("recurring_task_templates")
+          .insert(templateRows);
+        if (templatesError) {
+          console.error("[agents] recurring templates insert error:", templatesError);
+        }
       }
     } else {
       const { data: persisted } = await supabase
@@ -626,6 +847,8 @@ export async function runOrchestrator({
     onEvent({ type: "token", text: summary });
     const summaryMetadata = {
       type: "task-summary",
+      project_id: resolvedProjectId,
+      tasks_count: tasks.length,
       tasks: tasks.map((t) => ({
         title: t.title,
         due_date: t.due_date,
@@ -643,9 +866,11 @@ export async function runOrchestrator({
   }
 
   // Default path: Agronomist, or Diagnosis when a photo is attached (F-04).
-  const metadata: { toolCalls: unknown[]; land_conditions?: LandConditions } = {
-    toolCalls: [],
-  };
+  const metadata: {
+    toolCalls: unknown[];
+    land_conditions?: LandConditions;
+    recommendations?: CropRecommendation[];
+  } = { toolCalls: [] };
   let accumulatedText = "";
 
   const result: RunChatResult = await runAgent({
@@ -667,19 +892,43 @@ export async function runOrchestrator({
           onEvent({ type: "metadata", data: { land_conditions: landConditions } });
         }
       }
+      // Emit structured crop data for the recommendation card (F-03 AC-1).
+      // Mirrors land_conditions: the card can't render from markdown text alone.
+      if (metadata.recommendations === undefined) {
+        const recs = extractRecommendations(accumulatedText);
+        if (recs) {
+          metadata.recommendations = recs;
+          onEvent({ type: "metadata", data: { recommendations: recs } });
+        }
+      }
     },
   });
 
   metadata.toolCalls = result.functionCalls;
-  onEvent({ type: "metadata", data: metadata });
+  // Resolve structured crop data. The JSON <recommendations> block is optional
+  // and the AI often skips it — so the reliable fallback is parsing the
+  // markdown crop list the agronomist reliably emits.
+  if (metadata.recommendations === undefined) {
+    const fromJson = extractRecommendations(result.text);
+    if (fromJson) {
+      metadata.recommendations = fromJson;
+    } else {
+      const fromMarkdown = parseRecommendationsFromMarkdown(result.text);
+      if (fromMarkdown) metadata.recommendations = fromMarkdown;
+    }
+  }
 
   const content = result.text.trim() || STRINGS.chat_errors.aiUnavailable;
   const isRecommendation = /Apakah rencana ini sesuai\?/.test(content);
   const hasMetadata =
     metadata.toolCalls.length > 0 ||
     metadata.land_conditions !== undefined ||
+    metadata.recommendations !== undefined ||
     isRecommendation ||
     image !== null;
+  // Merge type into metadata BEFORE emitting — the streaming event is what the
+  // client renders live; without `type` the recommendation card never shows
+  // until a reload reads the (typed) row back from the DB.
   const typeMeta = isRecommendation
     ? { type: "recommendation" }
     : image !== null
@@ -689,10 +938,11 @@ export async function runOrchestrator({
           mime_type: image?.mimeType ?? "image/jpeg",
         }
       : {};
+  if (Object.keys(typeMeta).length > 0) Object.assign(metadata, typeMeta);
 
-  const persistedMeta: Record<string, unknown> = hasMetadata
-    ? { ...metadata, ...typeMeta }
-    : {};
+  onEvent({ type: "metadata", data: metadata });
+
+  const persistedMeta: Record<string, unknown> = hasMetadata ? metadata : {};
 
   return { messages: [{ content, metadata: persistedMeta }] };
 }

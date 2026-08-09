@@ -33,13 +33,17 @@ export interface TaskPlanItem {
 }
 
 export interface MessageMetadata {
-  type?: "recommendation" | "diagnosis" | "task-summary";
+  type?: "recommendation" | "diagnosis" | "task-summary" | "project_created";
   land_conditions?: LandConditions | null;
   toolCalls?: Array<{ name?: string }> | null;
   recommendations?: CropRecommendation[] | null;
   diagnostics?: DiagnosisItem[] | null;
   tasks?: TaskPlanItem[] | null;
   image_path?: string;
+  project_id?: string;
+  tasks_count?: number;
+  recurring_count?: number;
+  plan_confirmed?: boolean;
 }
 
 export interface ChatMessage {
@@ -82,6 +86,8 @@ export function ChatThread({
   hasError,
   onRetry,
   onExample,
+  onCreateProject,
+  onConfirm,
 }: {
   messages: ChatMessage[];
   streamingText: string;
@@ -90,7 +96,22 @@ export function ChatThread({
   hasError: boolean;
   onRetry: () => void;
   onExample: (prompt: string) => void;
+  onCreateProject?: (crops: string[]) => void;
+  onConfirm?: () => void;
 }) {
+  // Only the last unconfirmed recommendation may be confirmed — that's the one
+  // the server treats as awaitingConfirmation. Confirming an older/stale card
+  // would misroute, so its button is left out.
+  const lastUnconfirmedRecId = (() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const m = messages[i];
+      if (m.role === "assistant" && m.metadata?.type === "recommendation" && m.metadata?.plan_confirmed !== true) {
+        return m.id;
+      }
+    }
+    return null;
+  })();
+
   const endRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -105,13 +126,23 @@ export function ChatThread({
           role={message.role}
           content={message.content}
           metadata={message.metadata}
+          disabled={isStreaming}
+          onCreateProject={onCreateProject}
+          onConfirm={message.id === lastUnconfirmedRecId ? onConfirm : undefined}
         />
       ))}
 
       {isStreaming ? (
         <>
           {streamingText ? (
-            <MessageBubble role="assistant" content={streamingText} metadata={streamingMetadata} />
+            <MessageBubble
+              role="assistant"
+              content={streamingText}
+              metadata={streamingMetadata}
+              disabled={isStreaming}
+              onCreateProject={onCreateProject}
+              onConfirm={streamingMetadata?.type === "recommendation" ? onConfirm : undefined}
+            />
           ) : null}
           <div
             className="flex w-full items-center justify-start"

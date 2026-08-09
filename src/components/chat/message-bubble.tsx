@@ -15,10 +15,16 @@ export function MessageBubble({
   role,
   content,
   metadata,
+  disabled,
+  onCreateProject,
+  onConfirm,
 }: {
   role: MessageRole;
   content: string;
   metadata: MessageMetadata | null;
+  disabled?: boolean;
+  onCreateProject?: (crops: string[]) => void;
+  onConfirm?: () => void;
 }) {
   if (role === "user") {
     return (
@@ -36,7 +42,12 @@ export function MessageBubble({
         {content.trim() ? <Markdown content={cleanAssistantContent(content)} /> : null}
         {metadata?.type === "recommendation" ? (
           <div className="mt-3">
-            <RecommendationCard data={metadata.recommendations} />
+            <RecommendationCard
+              data={metadata.recommendations}
+              disabled={disabled}
+              onCreateProject={onCreateProject}
+              onConfirm={onConfirm}
+            />
           </div>
         ) : null}
         {metadata?.type === "diagnosis" ? (

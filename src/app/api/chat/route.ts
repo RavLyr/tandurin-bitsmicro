@@ -39,6 +39,7 @@ export async function POST(request: NextRequest) {
     message?: unknown;
     history?: unknown;
     image_path?: unknown;
+    project_crops?: unknown;
   };
   try {
     body = await request.json();
@@ -50,6 +51,15 @@ export async function POST(request: NextRequest) {
   if (!message) {
     return NextResponse.json({ error: STRINGS.chat_errors.emptyMessage }, { status: 400 });
   }
+
+  // T-024: explicit crop list from the "Buat Proyek" button — lets the
+  // orchestrator build the project deterministically, bypassing the LLM agent.
+  const projectCrops =
+    Array.isArray(body.project_crops) &&
+    body.project_crops.every((c) => typeof c === "string") &&
+    body.project_crops.length > 0
+      ? (body.project_crops as string[])
+      : null;
 
   const service = createServiceClient();
 
@@ -223,6 +233,7 @@ export async function POST(request: NextRequest) {
             lastAssistant && typeof lastAssistant.id === "string"
               ? { id: lastAssistant.id, metadata: prevMetadata }
               : null,
+          projectCrops: projectCrops ?? undefined,
           onEvent: (event) => {
             if (event.type === "token") {
               send({ type: "token", text: event.text });

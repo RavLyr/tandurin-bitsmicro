@@ -20,6 +20,7 @@ import { RealtimeBanner } from "./realtime-banner";
 import { KanbanFilterBar, type KanbanProject } from "./filter-bar";
 import type { KanbanTask } from "./task-card";
 import { fetchWithAuthRetry } from "@/lib/fetch-with-retry";
+import { TaskFormDialog } from "./task-form-dialog";
 
 const COLUMNS: KanbanColumnDef[] = [
   {
@@ -58,6 +59,7 @@ export function KanbanBoard() {
   const [realtimeConnected, setRealtimeConnected] = useState(true);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [taskFormOpen, setTaskFormOpen] = useState(false);
   const [offline, setOffline] = useState(false);
 
   const tasksRef = useRef(tasks);
@@ -372,12 +374,35 @@ export function KanbanBoard() {
   return (
     <>
       <RealtimeBanner connected={realtimeConnected} />
-      <KanbanFilterBar
-        search={search}
-        onSearch={setSearch}
+      <div className="flex items-center justify-between gap-4 px-4 pt-6 lg:px-8">
+        <KanbanFilterBar
+          search={search}
+          onSearch={setSearch}
+          projects={projects}
+          filterKey={filterKey}
+          onFilter={setFilterKey}
+        />
+        <button
+          type="button"
+          onClick={() => setTaskFormOpen(true)}
+          className="flex flex-shrink-0 items-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-label text-sm font-bold uppercase text-on-primary transition-colors hover:bg-primary-strong focus:outline-none focus:ring-2 focus:ring-primary"
+        >
+          <span className="material-symbols-outlined text-base" aria-hidden="true">
+            add
+          </span>
+          {STRINGS.dashboard.addTask}
+        </button>
+      </div>
+
+      <TaskFormDialog
+        open={taskFormOpen}
         projects={projects}
-        filterKey={filterKey}
-        onFilter={setFilterKey}
+        onCancel={() => setTaskFormOpen(false)}
+        onSaved={() => {
+          setTaskFormOpen(false);
+          void loadTasks();
+          void loadProjects();
+        }}
       />
 
       {offline ? (
