@@ -23,6 +23,8 @@ const patchSchema = z
     avatar_url: z.string().trim().max(500).optional().nullable(),
     notification_email_preference: z.boolean().optional(),
     reminder_hour: z.number().int().min(0).max(23).optional(),
+    recurring_reminder_enabled: z.boolean().optional(),
+    recurring_reminder_hour: z.number().int().min(0).max(23).optional(),
   })
   .refine((value) => Object.keys(value).length > 0, {
     message: "no-changes",
@@ -44,7 +46,9 @@ export async function GET() {
   const service = createServiceClient();
   const { data: profile, error } = await service
     .from("profiles")
-    .select("id, display_name, avatar_url, notification_email_preference, reminder_hour, created_at")
+    .select(
+      "id, display_name, avatar_url, notification_email_preference, reminder_hour, recurring_reminder_enabled, recurring_reminder_hour, created_at"
+    )
     .eq("id", user.id)
     .maybeSingle();
 
@@ -106,7 +110,9 @@ export async function PATCH(request: NextRequest) {
   const { data: updated, error } = await service
     .from("profiles")
     .upsert({ id: user.id, ...patch }, { onConflict: "id" })
-    .select("id, display_name, avatar_url, notification_email_preference, reminder_hour, created_at")
+    .select(
+      "id, display_name, avatar_url, notification_email_preference, reminder_hour, recurring_reminder_enabled, recurring_reminder_hour, created_at"
+    )
     .single();
 
   if (error || !updated) {

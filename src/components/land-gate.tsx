@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { STRINGS } from "@/lib/i18n";
 import { Skeleton } from "@/components/ui/skeleton";
+import { fetchWithAuthRetry } from "@/lib/fetch-with-retry";
 
 /**
  * Land gate (F-07 precondition): blocks protected feature content until the
@@ -19,7 +20,7 @@ export function LandGate({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
-    void fetch("/api/lands")
+    void fetchWithAuthRetry("/api/lands")
       .then((res) => (res.ok ? res.json() : null))
       .then((json: { data?: unknown[] } | null) => {
         if (cancelled) return;

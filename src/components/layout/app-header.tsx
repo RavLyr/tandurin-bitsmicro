@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Logo } from "@/components/layout/logo";
 import { STRINGS } from "@/lib/i18n";
-import { LandSwitcher } from "@/components/land-switcher";
+import { ProjectSwitcher } from "@/components/project-switcher";
 import { Onboarding, openOnboarding } from "@/components/onboarding/onboarding";
+import { fetchWithAuthRetry } from "@/lib/fetch-with-retry";
 
 export type ProtectedPathKey =
   | "dashboard"
@@ -34,7 +35,7 @@ export function AppHeader({ activePath }: { activePath?: ProtectedPathKey }) {
 
   useEffect(() => {
     let cancelled = false;
-    void fetch("/api/profil")
+    void fetchWithAuthRetry("/api/profil")
       .then((r) => (r.ok ? r.json() : null))
       .then((data: unknown) => {
         const d = data as { avatar_url?: string | null } | null;
@@ -59,7 +60,7 @@ export function AppHeader({ activePath }: { activePath?: ProtectedPathKey }) {
             <Logo className="h-8 w-8 rounded-lg" />
           </Link>
           <div className="relative min-w-0">
-            <LandSwitcher />
+            <ProjectSwitcher />
           </div>
         </div>
         <div className="flex flex-1 justify-center">

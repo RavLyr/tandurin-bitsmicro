@@ -3,11 +3,14 @@
 import { memo, useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { Badge } from "@/components/ui/badge";
 import { STRINGS } from "@/lib/i18n";
 
 export interface KanbanTask {
   id: string;
   land_id: string | null;
+  project_id: string | null;
+  project_name?: string | null;
   conversation_id: string | null;
   title: string;
   description: string | null;
@@ -135,6 +138,23 @@ export const TaskCard = memo(function TaskCard({
         <p className="mt-2 font-body line-clamp-2 text-sm text-on-surface-variant">
           {task.description}
         </p>
+      ) : null}
+
+      {task.project_name ? (
+        <span className="mt-2 inline-flex items-center gap-1 font-label text-xs text-on-surface-variant">
+          <span className="material-symbols-outlined text-sm" aria-hidden="true">
+            folder
+          </span>
+          <Badge variant="primary">{task.project_name}</Badge>
+        </span>
+      ) : null}
+      {!task.project_id && !task.project_name ? (
+        <span className="mt-2 inline-flex items-center gap-1 font-label text-xs text-on-surface-variant">
+          <span className="material-symbols-outlined text-sm" aria-hidden="true">
+            folder_off
+          </span>
+          <Badge variant="neutral">{STRINGS.dashboard.unorganizedTitle}</Badge>
+        </span>
       ) : null}
 
       <div className="mt-3 flex items-center justify-between gap-2 border-t border-outline pt-3">

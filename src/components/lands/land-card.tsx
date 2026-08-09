@@ -18,6 +18,7 @@ export interface LandItem {
   experience: LandExperience;
   is_active: boolean;
   task_count?: number;
+  project_count?: number;
 }
 
 type LandMedia = "soil" | "hydroponic" | "pot" | "other";
@@ -36,12 +37,14 @@ export function LandCard({
   onEdit,
   onDelete,
   onMakeActive,
+  onViewProjects,
 }: {
   land: LandItem;
   busy?: boolean;
   onEdit: (land: LandItem) => void;
   onDelete: (land: LandItem) => void;
   onMakeActive: (land: LandItem) => void;
+  onViewProjects: (land: LandItem) => void;
 }) {
   const budget = formatIdr(land.budget_idr);
 
@@ -107,7 +110,27 @@ export function LandCard({
             </span>
           </dd>
         </div>
+        <div className="flex flex-col gap-0.5">
+          <dt className="text-xs text-on-surface-variant">{STRINGS.lands.activeProjects}</dt>
+          <dd className="font-medium text-on-surface">
+            <span aria-label={STRINGS.lands.activeProjectsAria(land.project_count ?? 0)}>
+              {land.project_count ?? 0}
+            </span>
+          </dd>
+        </div>
       </dl>
+
+      <Button
+        variant="outline"
+        className="w-full"
+        onClick={() => onViewProjects(land)}
+        aria-label={STRINGS.lands.viewProjectsAria(land.name)}
+      >
+        <span className="material-symbols-outlined text-base" aria-hidden="true">
+          folder
+        </span>
+        {STRINGS.lands.viewProjects}
+      </Button>
 
       {!land.is_active ? (
         <Button variant="outline" className="w-full" disabled={busy} onClick={() => onMakeActive(land)}>

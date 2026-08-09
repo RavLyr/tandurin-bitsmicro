@@ -137,7 +137,7 @@ const LAND_SELECT =
 
 /**
  * GET /api/lands — list the user's lands, active first, with active-task
- * counts (tasks not marked 'selesai').
+ * counts (tasks not marked 'selesai') and active-project counts.
  */
 export async function GET() {
   const supabase = await createServerClient();
@@ -180,9 +180,21 @@ export async function GET() {
     taskCounts[activeLand.id] = (taskCounts[activeLand.id] ?? 0) + unassigned;
   }
 
+  const { data: projects } = await service
+    .from("projects")
+    .select("land_id")
+    .eq("user_id", user.id)
+    .eq("status", "active");
+
+  const projectCounts: Record<string, number> = {};
+  for (const project of projects ?? []) {
+    if (project.land_id) projectCounts[project.land_id] = (projectCounts[project.land_id] ?? 0) + 1;
+  }
+
   const items = (lands ?? []).map((land) => ({
     ...land,
     task_count: taskCounts[land.id] ?? 0,
+    project_count: projectCounts[land.id] ?? 0,
   }));
   items.sort((a, b) => Number(b.is_active) - Number(a.is_active));
 

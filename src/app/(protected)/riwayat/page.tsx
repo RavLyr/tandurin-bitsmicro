@@ -19,6 +19,8 @@ interface ConversationOverview {
   title: string;
   land_id: string | null;
   land_name: string | null;
+  project_id: string | null;
+  project_name: string | null;
   created_at: string;
   updated_at: string;
   message_count: number;
@@ -361,6 +363,9 @@ export default function RiwayatPage() {
                             </span>
                             {conv.land_name ? (
                               <Badge variant="neutral">{STRINGS.riwayat.landBadge(conv.land_name)}</Badge>
+                            ) : null}
+                            {conv.project_name ? (
+                              <Badge variant="primary">{conv.project_name}</Badge>
                             ) : null}
                             <span className="font-body text-xs text-on-surface-variant">
                               {STRINGS.riwayat.messageCount(conv.message_count)}

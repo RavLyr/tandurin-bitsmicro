@@ -10,20 +10,24 @@ import { STRINGS } from "@/lib/i18n";
 
 /**
  * /profil — Profile settings (T-404, F-10, DESIGN §4.6).
- * Three cards: Profil (avatar + display name + read-only email),
- * Preferensi Pengingat (email toggle + daily hour 0-23), Akun (logout).
+ * Four cards: Profil (avatar + display name + read-only email),
+ * Preferensi Pengingat (email toggle + daily hour 0-23), Preferensi
+ * Pengingat Rutin (recurring toggle + hour, T-21), Akun (logout).
  * Each card saves itself via PATCH /api/profil (partial update).
  * ponytail: per-card save buttons (no dirty-state tracking); upgrade path =
  * shared form primitives (T-005).
  */
 
 const REMINDER_HOURS = STRINGS.profil.reminderOptions;
+const RECURRING_HOURS = STRINGS.profil.recurringReminderOptions;
 
 interface Profile {
   display_name: string | null;
   avatar_url: string | null;
   notification_email_preference: boolean | null;
   reminder_hour: number | null;
+  recurring_reminder_enabled: boolean | null;
+  recurring_reminder_hour: number | null;
   email: string | null;
 }
 
@@ -58,8 +62,11 @@ export default function ProfilPage() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [reminderHour, setReminderHour] = useState("7");
   const [emailReminder, setEmailReminder] = useState(true);
+  const [recurringEnabled, setRecurringEnabled] = useState(true);
+  const [recurringHour, setRecurringHour] = useState("7");
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingPreference, setSavingPreference] = useState(false);
+  const [savingRecurring, setSavingRecurring] = useState(false);
 
   const loadProfile = useCallback(async () => {
     try {
@@ -78,6 +85,8 @@ export default function ProfilPage() {
       setAvatarUrl(data.avatar_url);
       setEmailReminder(data.notification_email_preference ?? true);
       setReminderHour(data.reminder_hour != null ? String(data.reminder_hour) : "7");
+      setRecurringEnabled(data.recurring_reminder_enabled ?? true);
+      setRecurringHour(data.recurring_reminder_hour != null ? String(data.recurring_reminder_hour) : "7");
     } catch {
       toast(STRINGS.profil.saveFailed, "danger");
     }
@@ -138,6 +147,29 @@ export default function ProfilPage() {
       toast(STRINGS.profil.saveSuccess);
     } finally {
       setSavingPreference(false);
+    }
+  };
+
+  const handleSaveRecurringPreference = async () => {
+    const hour = Number(recurringHour);
+    if (!Number.isInteger(hour) || hour < 0 || hour > 23) {
+      toast(STRINGS.profil_errors.reminderHour, "danger");
+      return;
+    }
+    setSavingRecurring(true);
+    try {
+      const result = await patchProfile({
+        recurring_reminder_enabled: recurringEnabled,
+        recurring_reminder_hour: hour,
+      });
+      if (typeof result === "string") {
+        toast(result, "danger");
+        return;
+      }
+      setProfile(result);
+      toast(STRINGS.profil.saveSuccess);
+    } finally {
+      setSavingRecurring(false);
     }
   };
 
@@ -346,13 +378,91 @@ export default function ProfilPage() {
                     </form>
                   </div>
                 </section>
+              {/* Section 3: Preferensi Pengingat Rutin (T-21) */}
+                <section>
+                  <SectionTitle number="03" label={STRINGS.profil.sectionRecurringTitle} />
+                  <div className="relative overflow-hidden rounded-lg border border-outline-variant bg-surface p-8 transition-all duration-300 hover:shadow-sm lg:p-12">
+                    <form
+                      onSubmit={(event) => {
+                        event.preventDefault();
+                        void handleSaveRecurringPreference();
+                      }}
+                    >
+                      <div className="mb-8 space-y-8">
+                        <div className="flex items-center justify-between border-b border-outline-variant pb-6">
+                          <div>
+                            <h3 className="font-body text-base font-medium text-on-surface">
+                              {STRINGS.profil.recurringRemindTitle}
+                            </h3>
+                            <p className="mt-1 font-body text-sm text-on-surface-variant">
+                              {STRINGS.profil.recurringRemindBody}
+                            </p>
+                          </div>
+                          <label className="relative inline-flex cursor-pointer items-center">
+                            <input
+                              type="checkbox"
+                              checked={recurringEnabled}
+                              onChange={(event) => setRecurringEnabled(event.target.checked)}
+                              className="peer sr-only"
+                            />
+                            <div className="peer h-6 w-11 rounded-full bg-outline-variant transition-colors after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:bg-white after:transition-all peer-checked:bg-primary peer-checked:after:translate-x-full peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2">
+                              <span className="sr-only">{STRINGS.profil.recurringRemindToggleAria}</span>
+                            </div>
+                          </label>
+                        </div>
+                        <div>
+                          <label
+                            htmlFor="recurring-reminder-time"
+                            className="mb-2 block font-label text-xs uppercase text-on-surface-variant"
+                          >
+                            {STRINGS.profil.recurringReminderLabel}
+                          </label>
+                          <div className="relative">
+                            <select
+                              id="recurring-reminder-time"
+                              value={recurringHour}
+                              onChange={(event) => setRecurringHour(event.target.value)}
+                              className="w-full cursor-pointer appearance-none rounded-none border-b border-outline-variant bg-transparent py-2 pr-8 font-body text-base transition-colors focus:border-primary focus:outline-none"
+                            >
+                              {RECURRING_HOURS.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                            <span
+                              className="material-symbols-outlined pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-on-surface-variant"
+                              aria-hidden="true"
+                            >
+                              expand_more
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex justify-end">
+                        <button
+                          type="submit"
+                          disabled={savingRecurring}
+                          className="flex items-center gap-2 rounded bg-primary px-8 py-3 font-label text-sm uppercase text-on-primary transition-opacity hover:opacity-90 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                        >
+                          <span>
+                            {savingRecurring ? STRINGS.common.loading : STRINGS.profil.saveRecurringPreference}
+                          </span>
+                          <span className="material-symbols-outlined text-sm" aria-hidden="true">
+                            arrow_forward
+                          </span>
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </section>
               </div>
 
               {/* Sidebar: Akun */}
               <div className="lg:col-span-4 lg:pl-8">
                 <div className="sticky top-24">
                   <section>
-                    <SectionTitle number="03" label={STRINGS.profil.sectionSecurityTitle} />
+                    <SectionTitle number="04" label={STRINGS.profil.sectionSecurityTitle} />
                     <div className="mb-6 rounded-lg border border-outline-variant bg-surface p-8">
                       <h3 className="mb-2 font-headline text-2xl font-bold text-on-surface">
                         {STRINGS.profil.changePasswordTitle}

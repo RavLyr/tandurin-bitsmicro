@@ -1,6 +1,9 @@
 import { LlmAgent } from "@google/adk";
 import { agronomistAgent, diagnosisAgent } from "./agronomist";
 import { taskPlannerAgent } from "./task-planner";
+import { projectCreatorAgent } from "./project-creator";
+import { oneTimeTaskGeneratorAgent } from "./one-time-task-generator";
+import { recurringTaskGeneratorAgent } from "./recurring-task-generator";
 import { SYSTEM_PROMPTS } from "../prompts";
 import { AGENT_MODEL } from "./agronomist";
 
@@ -16,8 +19,15 @@ export const orchestratorAgent: LlmAgent = new LlmAgent({
   name: "Orchestrator",
   model: AGENT_MODEL,
   description:
-    "Router utama Tanduri: mengarahkan pertanyaan ke Agronomist, Diagnosis, atau Task Planner.",
+    "Router utama Tanduri: mengarahkan pertanyaan ke Agronomist, Diagnosis, Task Planner, Project Creator, One-Time Task Generator, atau Recurring Task Generator.",
   instruction: SYSTEM_PROMPTS.orchestrator,
   tools: [],
-  subAgents: [agronomistAgent, diagnosisAgent, taskPlannerAgent],
+  subAgents: [
+    agronomistAgent,
+    diagnosisAgent,
+    taskPlannerAgent,
+    projectCreatorAgent,
+    oneTimeTaskGeneratorAgent,
+    recurringTaskGeneratorAgent,
+  ],
 });

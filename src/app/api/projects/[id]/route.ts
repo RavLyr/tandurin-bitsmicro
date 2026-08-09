@@ -3,10 +3,10 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { STRINGS } from "@/lib/i18n";
-import { landPatchSchema, zodErrors } from "../route";
+import { projectPatchSchema, zodErrors } from "../route";
 
 /**
- * Service-role client for land writes (server-only env vars).
+ * Service-role client for project writes (server-only env vars).
  * Never import this into client components (AGENTS.md hard rule).
  */
 function createServiceClient() {
@@ -17,8 +17,8 @@ function createServiceClient() {
   );
 }
 
-const LAND_SELECT =
-  "id, user_id, name, location, latitude, longitude, area_m2, media, water, sunlight, budget_idr, experience, is_active, created_at, updated_at";
+const PROJECT_SELECT =
+  "id, user_id, land_id, name, description, status, created_at, updated_at";
 
 /** Read + parse route segment `[id]` (Next 15 async params). */
 async function readId(context: { params: Promise<{ id: string }> }) {
@@ -33,8 +33,8 @@ function parseUuid(id: string): string | null {
 }
 
 /**
- * PATCH /api/lands/[id] — partial update with the same validation as POST.
- * is_active/user_id can never be set from the body (schema excludes them).
+ * PATCH /api/projects/[id] — partial update with the same validation as POST.
+ * status/user_id can never be set from the body (schema excludes user_id).
  */
 export async function PATCH(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   const supabase = await createServerClient();
@@ -49,17 +49,17 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
   const rawId = await readId(context);
   const id = parseUuid(rawId);
   if (!id) {
-    return NextResponse.json({ error: STRINGS.lands.notFound }, { status: 404 });
+    return NextResponse.json({ error: STRINGS.projects.notFound }, { status: 404 });
   }
 
   let body: unknown;
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: STRINGS.lands.invalidBody }, { status: 422 });
+    return NextResponse.json({ error: STRINGS.projects.invalidBody }, { status: 422 });
   }
 
-  const parsed = landPatchSchema.safeParse(body);
+  const parsed = projectPatchSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ errors: zodErrors(parsed.error) }, { status: 422 });
   }
@@ -67,34 +67,33 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
 
   const service = createServiceClient();
   const { data: existing } = await service
-    .from("lands")
+    .from("projects")
     .select("id")
     .eq("id", id)
     .eq("user_id", user.id)
     .maybeSingle();
   if (!existing) {
-    return NextResponse.json({ error: STRINGS.lands.notFound }, { status: 404 });
+    return NextResponse.json({ error: STRINGS.projects.notFound }, { status: 404 });
   }
 
   const { data: updated, error } = await service
-    .from("lands")
+    .from("projects")
     .update(data)
     .eq("id", id)
     .eq("user_id", user.id)
-    .select(LAND_SELECT)
+    .select(PROJECT_SELECT)
     .single();
 
   if (error || !updated) {
-    return NextResponse.json({ error: STRINGS.lands.failed }, { status: 500 });
+    return NextResponse.json({ error: STRINGS.projects.failed }, { status: 500 });
   }
-  return NextResponse.json({ data: updated });
+  return NextResponse.json({ project: updated });
 }
 
 /**
- * DELETE /api/lands/[id] — soft-block when the land still has active
- * projects (409) or tasks (409); deleting the active land promotes the
- * oldest remaining (created_at) to active; with zero remaining lands, no
- * active land exists (F-07 §7.2).
+ * DELETE /api/projects/[id] — soft-block when the project still has tasks
+ * (409). Deleting a project cascades its recurring templates + logs
+ * (FK on delete cascade in 003_projects.sql).
  */
 export async function DELETE(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   const supabase = await createServerClient();
@@ -109,69 +108,36 @@ export async function DELETE(request: NextRequest, context: { params: Promise<{ 
   const rawId = await readId(context);
   const id = parseUuid(rawId);
   if (!id) {
-    return NextResponse.json({ error: STRINGS.lands.notFound }, { status: 404 });
+    return NextResponse.json({ error: STRINGS.projects.notFound }, { status: 404 });
   }
 
   const service = createServiceClient();
   const { data: existing } = await service
-    .from("lands")
-    .select("id, is_active")
+    .from("projects")
+    .select("id")
     .eq("id", id)
     .eq("user_id", user.id)
     .maybeSingle();
   if (!existing) {
-    return NextResponse.json({ error: STRINGS.lands.notFound }, { status: 404 });
-  }
-
-  const { data: projectBlocked } = await service
-    .from("projects")
-    .select("id")
-    .eq("land_id", id)
-    .eq("status", "active")
-    .limit(1);
-  if (projectBlocked && projectBlocked.length > 0) {
-    return NextResponse.json({ error: STRINGS.lands.deleteBlockedProjects }, { status: 409 });
+    return NextResponse.json({ error: STRINGS.projects.notFound }, { status: 404 });
   }
 
   const { data: blocked } = await service
     .from("tasks")
     .select("id")
-    .eq("land_id", id)
+    .eq("project_id", id)
     .limit(1);
   if (blocked && blocked.length > 0) {
-    return NextResponse.json({ error: STRINGS.lands.deleteBlocked }, { status: 409 });
+    return NextResponse.json({ error: STRINGS.projects.deleteBlocked }, { status: 409 });
   }
 
   const { error: deleteError } = await service
-    .from("lands")
+    .from("projects")
     .delete()
     .eq("id", id)
     .eq("user_id", user.id);
   if (deleteError) {
-    return NextResponse.json({ error: STRINGS.lands.failed }, { status: 500 });
-  }
-
-  // ponytail: promote-oldest is a second statement, not one DB transaction
-  // (no RPC for it); the partial unique index still guarantees ≤1 active,
-  // and a failure here only leaves zero active — recoverable in the UI.
-  if (existing.is_active) {
-    const { data: oldest } = await service
-      .from("lands")
-      .select("id")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: true })
-      .order("id", { ascending: true })
-      .limit(1)
-      .maybeSingle();
-    if (oldest) {
-      const { error: promoteError } = await service
-        .from("lands")
-        .update({ is_active: true })
-        .eq("id", oldest.id);
-      if (promoteError) {
-        return NextResponse.json({ error: STRINGS.lands.failed }, { status: 500 });
-      }
-    }
+    return NextResponse.json({ error: STRINGS.projects.failed }, { status: 500 });
   }
 
   return NextResponse.json({ data: { deleted_id: id } });

@@ -17,8 +17,9 @@ import { ConfirmDialog } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { KanbanColumn, type KanbanColumnDef } from "./column";
 import { RealtimeBanner } from "./realtime-banner";
-import { KanbanFilterBar, type KanbanLand } from "./filter-bar";
+import { KanbanFilterBar, type KanbanProject } from "./filter-bar";
 import type { KanbanTask } from "./task-card";
+import { fetchWithAuthRetry } from "@/lib/fetch-with-retry";
 
 const COLUMNS: KanbanColumnDef[] = [
   {
@@ -46,11 +47,11 @@ const STATUS_ORDER: KanbanTask["status"][] = ["belum_dikerjakan", "sedang_dikerj
 /**
  * Kanban board (T-304, F-06): fetches tasks, drags between columns via
  * @dnd-kit, optimistic moves with revert on failure, realtime via Supabase
- * channel (30s polling fallback), search + land filters, offline gate.
+ * channel (30s polling fallback), search + project filter, offline gate.
  */
 export function KanbanBoard() {
   const [tasks, setTasks] = useState<KanbanTask[]>([]);
-  const [lands, setLands] = useState<KanbanLand[]>([]);
+  const [projects, setProjects] = useState<KanbanProject[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterKey, setFilterKey] = useState("semua");
@@ -61,6 +62,7 @@ export function KanbanBoard() {
 
   const tasksRef = useRef(tasks);
   tasksRef.current = tasks;
+  const projectsRef = useRef<Record<string, string>>({});
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
@@ -68,9 +70,9 @@ export function KanbanBoard() {
 
   const loadTasks = useCallback(async (signal?: AbortSignal) => {
     try {
-      const url = new URL("/api/tasks", window.location.origin);
-      if (filterKey !== "semua") url.searchParams.set("land_id", filterKey);
-      const res = await fetch(url, { signal });
+      // Fetch all tasks; column/unorganized partitioning happens client-side
+      // so realtime merges stay simple regardless of the selected project.
+      const res = await fetchWithAuthRetry("/api/tasks", { signal });
       if (!res.ok) throw new Error("load failed");
       const json = (await res.json()) as { tasks: KanbanTask[] };
       setTasks(json.tasks ?? []);
@@ -81,24 +83,34 @@ export function KanbanBoard() {
     } finally {
       setLoading(false);
     }
-  }, [filterKey]);
+  }, []);
 
-  const loadLands = useCallback(async () => {
+  const loadProjects = useCallback(async () => {
     try {
-      const res = await fetch("/api/lands");
-      if (res.ok) {
-        const json = (await res.json()) as { lands: KanbanLand[] };
-        setLands(json.lands ?? []);
+      const [listRes, activeRes] = await Promise.all([
+        fetchWithAuthRetry("/api/projects"),
+        fetchWithAuthRetry("/api/projects/active"),
+      ]);
+      if (listRes.ok) {
+        const json = (await listRes.json()) as { projects: KanbanProject[] };
+        setProjects(json.projects ?? []);
+      }
+      if (activeRes.ok) {
+        const json = (await activeRes.json()) as { project: KanbanProject | null };
+        if (json.project) setFilterKey(json.project.id);
       }
     } catch {
-      setLands([]);
+      setProjects([]);
     }
   }, []);
 
   useEffect(() => {
-    void loadTasks();
-    void loadLands();
-  }, [loadTasks, loadLands]);
+    void loadProjects();
+  }, [loadTasks, loadProjects]);
+
+  useEffect(() => {
+    projectsRef.current = Object.fromEntries(projects.map((p) => [p.id, p.name]));
+  }, [projects]);
 
   // Realtime channel (F-06): merge INSERT/UPDATE/DELETE; 30s polling fallback.
   useEffect(() => {
@@ -118,9 +130,10 @@ export function KanbanBoard() {
             const row = payload.new as Partial<KanbanTask> | null;
             const oldRow = payload.old as Partial<KanbanTask> | null;
             if (event === "INSERT" && row?.id) {
-              setTasks((prev) => (prev.some((t) => t.id === row.id) ? prev : [...prev, row as KanbanTask]));
+              const enriched = { ...row, project_name: row.project_id ? projectsRef.current[row.project_id] ?? null : null } as KanbanTask;
+              setTasks((prev) => (prev.some((t) => t.id === row.id) ? prev : [...prev, enriched]));
             } else if (event === "UPDATE" && row?.id) {
-              setTasks((prev) => prev.map((t) => (t.id === row.id ? { ...t, ...row } : t)));
+              setTasks((prev) => prev.map((t) => (t.id === row.id ? { ...t, ...row, project_name: row.project_name ?? t.project_name } : t)));
             } else if (event === "DELETE" && oldRow?.id) {
               setTasks((prev) => prev.filter((t) => t.id !== oldRow.id));
             }
@@ -326,7 +339,7 @@ export function KanbanBoard() {
   const visibleTasks = useMemo(() => {
     const needle = search.trim().toLowerCase();
     return tasks.filter((t) => {
-      if (filterKey !== "semua" && t.land_id !== filterKey) return false;
+      if (filterKey !== "semua" && t.project_id !== filterKey) return false;
       if (!needle) return true;
       return t.title.toLowerCase().includes(needle);
     });
@@ -345,13 +358,20 @@ export function KanbanBoard() {
     [visibleTasks]
   );
 
+  // Tasks without a project are excluded from project-filtered columns; keep
+  // them reachable via the "Unorganized" section at the bottom of the board.
+  const unorganizedTasks = useMemo(
+    () => (filterKey === "semua" ? [] : tasks.filter((t) => t.project_id === null)),
+    [tasks, filterKey]
+  );
+
   return (
     <>
       <RealtimeBanner connected={realtimeConnected} />
       <KanbanFilterBar
         search={search}
         onSearch={setSearch}
-        lands={lands}
+        projects={projects}
         filterKey={filterKey}
         onFilter={setFilterKey}
       />
@@ -381,12 +401,20 @@ export function KanbanBoard() {
             <p className="max-w-md font-body text-sm text-on-surface-variant">
               {STRINGS.dashboard.ctaBody}
             </p>
-            <Link
-              href="/chat"
-              className="rounded-md bg-primary px-6 py-3 font-button uppercase text-on-primary transition-colors duration-300 hover:bg-primary-fixed-dim focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-            >
-              {STRINGS.dashboard.ctaLink}
-            </Link>
+            <div className="flex flex-col items-center gap-3 sm:flex-row">
+              <Link
+                href="/chat"
+                className="rounded-md bg-primary px-6 py-3 font-button uppercase text-on-primary transition-colors duration-300 hover:bg-primary-fixed-dim focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+              >
+                {STRINGS.dashboard.ctaLink}
+              </Link>
+              <Link
+                href="/projects/new"
+                className="rounded-md border border-outline-variant bg-surface px-6 py-3 font-button uppercase text-on-surface transition-colors duration-300 hover:bg-surface-container focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+              >
+                {STRINGS.dashboard.ctaCreateProject}
+              </Link>
+            </div>
           </div>
         ) : (
           <DndContext
@@ -413,6 +441,58 @@ export function KanbanBoard() {
             </div>
           </DndContext>
         )}
+        {unorganizedTasks.length > 0 ? (
+          <section
+            aria-label={STRINGS.dashboard.unorganized.title}
+            className="mt-10 flex flex-col gap-3 border-t border-outline pt-6"
+          >
+            <div className="flex flex-col gap-1">
+              <h2 className="font-headline text-base font-semibold text-on-surface">
+                {STRINGS.dashboard.unorganized.title}
+              </h2>
+              <p className="font-body text-sm text-on-surface-variant">
+                {STRINGS.dashboard.unorganized.hint}
+              </p>
+            </div>
+            <ul className="grid min-w-[900px] grid-cols-1 gap-3 md:grid-cols-3">
+              {unorganizedTasks
+                .sort((a, b) => a.position - b.position)
+                .map((task) => {
+                  const column = COLUMNS.find((c) => c.status === task.status) ?? COLUMNS[0];
+                  return (
+                    <li
+                      key={task.id}
+                      className="flex items-center gap-3 rounded-lg border border-outline-variant bg-surface-container-lowest p-4"
+                    >
+                      <span
+                        aria-hidden="true"
+                        className={`h-2.5 w-2.5 shrink-0 rounded-full ${column.dotClass}`}
+                      />
+                      <p className="min-w-0 flex-1 truncate font-body text-sm text-on-surface">
+                        {task.title}
+                      </p>
+                      <button
+                        type="button"
+                        aria-label={STRINGS.kanban.moveLeft}
+                        onClick={() => handleMove(task.id, -1)}
+                        className="shrink-0 rounded p-1 font-button text-xs text-on-surface-variant transition-colors hover:bg-surface-container hover:text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
+                      >
+                        ‹
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={STRINGS.kanban.moveRight}
+                        onClick={() => handleMove(task.id, 1)}
+                        className="shrink-0 rounded p-1 font-button text-xs text-on-surface-variant transition-colors hover:bg-surface-container hover:text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
+                      >
+                        ›
+                      </button>
+                    </li>
+                  );
+                })}
+            </ul>
+          </section>
+        ) : null}
       </div>
 
       <ConfirmDialog

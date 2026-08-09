@@ -2,11 +2,17 @@ import { runAgent } from "./core/runner";
 import type { AgentContext, ChatTurn, LandConditions, RunChatResult } from "./core/types";
 import { agronomistAgent, diagnosisAgent } from "./agents/agronomist";
 import { taskPlannerAgent } from "./agents/task-planner";
+import { projectCreatorAgent } from "./agents/project-creator";
 import {
   generate_tasks_executor,
   type GeneratedTask,
   type TaskPhase,
 } from "./tools/task-generator";
+import {
+  generate_one_time_tasks_executor,
+  type GeneratedOneTimeTaskWithDue,
+} from "./tools/one-time-task-generator";
+import type { GeneratedProject } from "./tools/project-generator";
 import { STRINGS } from "@/lib/i18n";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -22,8 +28,17 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type { AgentContext, ChatTurn, LandConditions, RunChatResult };
 export type { GeneratedTask, TaskPhase };
+export type { GeneratedOneTimeTaskWithDue } from "./tools/one-time-task-generator";
+export type {
+  GeneratedProject,
+  GeneratedOneTimeTask,
+  GeneratedRecurringTemplate,
+} from "./tools/project-generator";
 export { agronomistAgent, diagnosisAgent } from "./agents/agronomist";
 export { taskPlannerAgent } from "./agents/task-planner";
+export { projectCreatorAgent } from "./agents/project-creator";
+export { oneTimeTaskGeneratorAgent } from "./agents/one-time-task-generator";
+export { recurringTaskGeneratorAgent } from "./agents/recurring-task-generator";
 export { orchestratorAgent } from "./agents/orchestrator";
 
 // ---------------------------------------------------------------------------
@@ -75,6 +90,9 @@ const AFFIRMATIVE_WORDS = [
 
 /** Direct instruction to build the schedule (e.g. "langsung buat jadwal"). */
 const SCHEDULING_INTENT = /(buat|bikin)\s+(jadwal|rencana|schedul)|jadwalnya|langsung|mulai|jalankan|aturkan/i;
+
+/** Direct request to start a new planting project (T-012, project flow). */
+const PROJECT_INTENT = /(saya|aku)\s+(ingin|mau|pengen)\s+(menanam|tanam|mulai|buat)|buat\s+proyek|proyek\s+baru|mulai\s+tanam/i;
 
 const NEGATION = /\b(tidak|nggak|gak|belum|jangan|bukan)\b/;
 
@@ -154,6 +172,63 @@ function parseTasks(raw: unknown): GeneratedTask[] | null {
   );
 }
 
+export interface RunProjectCreatorParams {
+  prompt: string;
+  history?: ChatTurn[];
+  context?: AgentContext;
+  onToken?: (text: string) => void;
+  supabase?: unknown;
+}
+
+export interface RunProjectCreatorResult {
+  text: string;
+  project: GeneratedProject | null;
+  crops: string[];
+}
+
+function parseProject(raw: unknown): GeneratedProject | null {
+  if (typeof raw !== "object" || raw === null) return null;
+  const p = raw as Record<string, unknown>;
+  if (typeof p.name !== "string") return null;
+  return {
+    name: p.name,
+    description: typeof p.description === "string" ? p.description : "",
+    one_time_tasks: Array.isArray(p.one_time_tasks)
+      ? (p.one_time_tasks as GeneratedProject["one_time_tasks"])
+      : [],
+    recurring_templates: Array.isArray(p.recurring_templates)
+      ? (p.recurring_templates as GeneratedProject["recurring_templates"])
+      : [],
+  };
+}
+
+/** Run the Project Creator agent: intent → parsed project skeleton (T-011). */
+export async function runProjectCreator({
+  prompt,
+  history = [],
+  context = {},
+  onToken,
+  supabase,
+}: RunTaskPlannerParams): Promise<RunProjectCreatorResult> {
+  const { text, functionCalls } = await runAgent({
+    agent: projectCreatorAgent,
+    prompt,
+    history,
+    context,
+    onToken,
+    supabase,
+  });
+
+  const projectCall = functionCalls.find((c) => c.name === "generate_project");
+  const project = projectCall ? parseProject(projectCall.output) : null;
+  const rawCrops = projectCall?.args?.crops;
+  const crops = Array.isArray(rawCrops)
+    ? rawCrops.filter((c): c is string => typeof c === "string")
+    : [];
+
+  return { text, project, crops };
+}
+
 /** Run the Task Planner agent: confirmed plan → parsed task list (T-302). */
 export async function runTaskPlanner({
   prompt,
@@ -191,6 +266,8 @@ export interface RunOrchestratorParams {
   userId: string;
   landId: string | null;
   conversationId: string;
+  /** T-024: active project the conversation is linked to (null = none). */
+  projectId?: string | null;
   /** Inline image attached to the user message (T-401, F-04). */
   image: { mimeType: string; data: string } | null;
   /** Stored image path (explicit this message, or last in conversation). */
@@ -206,6 +283,154 @@ export interface RunOrchestratorParams {
 export interface RunOrchestratorResult {
   /** Assistant message(s) to persist, in order. */
   messages: { content: string; metadata: Record<string, unknown> }[];
+}
+
+interface ProjectCreationParams {
+  message: string;
+  history: ChatTurn[];
+  context: AgentContext;
+  supabase: SupabaseClient;
+  userId: string;
+  landId: string | null;
+  conversationId: string;
+  onEvent: (event: OrchestratorEvent) => void;
+}
+
+/**
+ * Project creation flow: run the Project Creator agent, persist the project +
+ * one-time tasks + recurring templates, stream the summary. Returns null when
+ * the agent produced no project (caller falls through to the default path).
+ */
+async function runProjectCreationFlow({
+  message,
+  history,
+  context,
+  supabase,
+  userId,
+  landId,
+  conversationId,
+  onEvent,
+}: ProjectCreationParams): Promise<RunOrchestratorResult | null> {
+  let result: RunProjectCreatorResult;
+  try {
+    result = await runProjectCreator({ prompt: message, history, context, supabase });
+  } catch (err) {
+    console.error("[agents] project creator error:", err);
+    return null;
+  }
+
+  const { project, crops } = result;
+  if (!project) return null;
+
+  if (!landId) {
+    onEvent({ type: "token", text: STRINGS.chat_errors.noLand });
+    return {
+      messages: [{ content: STRINGS.chat_errors.noLand, metadata: {} }],
+    };
+  }
+
+  const interim = STRINGS.projects.creating;
+  onEvent({ type: "token", text: interim });
+
+  const { data: createdProject, error: projectError } = await supabase
+    .from("projects")
+    .insert({ user_id: userId, land_id: landId, name: project.name, description: project.description })
+    .select("id, name")
+    .single();
+
+  if (projectError || !createdProject) {
+    onEvent({ type: "token", text: STRINGS.projects.failed });
+    return { messages: [{ content: STRINGS.projects.failed, metadata: {} }] };
+  }
+  const projectId = createdProject.id;
+
+  // T-024: link the conversation to the project so /riwayat shows the badge
+  // and resuming the chat carries the project context.
+  if (conversationId && projectId) {
+    await supabase
+      .from("conversations")
+      .update({ project_id: projectId })
+      .eq("id", conversationId);
+  }
+
+  // generate_project returns tasks without due_date — computed here (T-008).
+  const crop = crops[0] ?? "Tanaman";
+  let oneTimeTasks: GeneratedOneTimeTaskWithDue[];
+  try {
+    oneTimeTasks = generate_one_time_tasks_executor({
+      project_summary: { crops: [crop], planting_window: "mulai hari ini", experience: "beginner" },
+    });
+  } catch {
+    oneTimeTasks = [];
+  }
+  if (oneTimeTasks.length === 0) {
+    oneTimeTasks = project.one_time_tasks.map((t) => ({
+      title: t.title,
+      description: t.description,
+      phase: t.phase,
+      position: t.position,
+      due_date: new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10),
+    }));
+  }
+
+  const taskRows = oneTimeTasks.map((t) => ({
+    user_id: userId,
+    land_id: landId,
+    project_id: projectId,
+    conversation_id: conversationId,
+    title: t.title,
+    description: t.description,
+    phase: t.phase,
+    due_date: t.due_date,
+    position: t.position,
+    crop: null,
+  }));
+  const { error: tasksError } = await supabase.from("tasks").insert(taskRows);
+  if (tasksError) {
+    console.error("[agents] project tasks insert error:", tasksError);
+  }
+
+  // Recurring templates — interval/time defaults already applied in the tool.
+  const templateRows = project.recurring_templates.map((t) => ({
+    user_id: userId,
+    project_id: projectId,
+    title: t.title,
+    description: t.description,
+    category: t.category,
+    interval_days: t.interval_days,
+    time_of_day: t.time_of_day,
+    is_active: true,
+  }));
+  if (templateRows.length > 0) {
+    const { error: templatesError } = await supabase
+      .from("recurring_task_templates")
+      .insert(templateRows);
+    if (templatesError) {
+      console.error("[agents] recurring templates insert error:", templatesError);
+    }
+  }
+
+  const summary = STRINGS.projects.createdSummary(
+    createdProject.name,
+    taskRows.length,
+    templateRows.length
+  );
+  onEvent({ type: "token", text: summary });
+
+  const summaryMetadata = {
+    type: "project_created",
+    project_id: projectId,
+    tasks_count: taskRows.length,
+    recurring_count: templateRows.length,
+  };
+  onEvent({ type: "metadata", data: summaryMetadata });
+
+  return {
+    messages: [
+      { content: interim, metadata: { type: "project-creating" } },
+      { content: summary, metadata: summaryMetadata },
+    ],
+  };
 }
 
 /**
@@ -224,12 +449,41 @@ export async function runOrchestrator({
   userId,
   landId,
   conversationId,
+  projectId,
   image,
   imagePath,
   awaitingConfirmation,
   lastAssistant,
   onEvent,
 }: RunOrchestratorParams): Promise<RunOrchestratorResult> {
+  // T-024: surface the active project to downstream agents so the
+  // project-creation-avoidance / task-planner flows can reference it.
+  const agentContext: AgentContext = { ...context };
+  if (projectId) {
+    const { data: project } = await supabase
+      .from("projects")
+      .select("name")
+      .eq("id", projectId)
+      .maybeSingle();
+    if (project?.name) {
+      agentContext.projectSummary = `Proyek aktif: ${project.name}`;
+    }
+  }
+
+  if (PROJECT_INTENT.test(message) && !awaitingConfirmation) {
+    const creation = await runProjectCreationFlow({
+      message,
+      history,
+      context: agentContext,
+      supabase,
+      userId,
+      landId,
+      conversationId,
+      onEvent,
+    });
+    if (creation) return creation;
+  }
+
   if (isAffirmative(message) && awaitingConfirmation && lastAssistant) {
     // T-301 step 3: mark the recommendation as confirmed.
     await supabase
@@ -255,7 +509,7 @@ export async function runOrchestrator({
         const planResult = await runTaskPlanner({
           prompt: message,
           history,
-          context,
+          context: agentContext,
           supabase,
         });
         tasks = (planResult.tasks ?? []).filter(
@@ -271,7 +525,7 @@ export async function runOrchestrator({
 
       if (tasks.length < 5) {
         // Partial failure / no output → deterministic fallback (≥5 tasks).
-        const crop = (context.landSummary?.match(/Nama lahan: ([^\n]+)/)?.[1] ??
+        const crop = (agentContext.landSummary?.match(/Nama lahan: ([^\n]+)/)?.[1] ??
           "Tanaman") as string;
         tasks = fallbackSchedule(crop);
       }
@@ -360,7 +614,7 @@ export async function runOrchestrator({
     agent: image !== null ? diagnosisAgent : agronomistAgent,
     prompt: message,
     history,
-    context,
+    context: agentContext,
     supabase,
     image,
     onToken: (text) => {

@@ -59,6 +59,8 @@ export async function POST(request: NextRequest) {
   const requestedId = body.conversation_id ?? null;
   const createdNew = !requestedId;
   let conversationId: string;
+  // T-024: active project the conversation is linked to (null = none).
+  let projectId: string | null = null;
 
   // Resolve the effective land: explicit land_id, else the active land.
   // Tasks planned later inherit this land id so the board + land card counts
@@ -77,7 +79,7 @@ export async function POST(request: NextRequest) {
   if (requestedId) {
     const { data: conv, error } = await service
       .from("conversations")
-      .select("id")
+      .select("id, project_id")
       .eq("id", requestedId)
       .eq("user_id", user.id)
       .maybeSingle();
@@ -85,6 +87,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: STRINGS.chat_errors.notFound }, { status: 404 });
     }
     conversationId = requestedId;
+    projectId = conv.project_id ?? null;
   } else {
     const { data: conv, error } = await service
       .from("conversations")
@@ -209,6 +212,7 @@ export async function POST(request: NextRequest) {
           userId: user.id,
           landId,
           conversationId,
+          projectId,
           image,
           imagePath,
           awaitingConfirmation,

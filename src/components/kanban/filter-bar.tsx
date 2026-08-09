@@ -2,32 +2,32 @@
 
 import { STRINGS } from "@/lib/i18n";
 
-export interface KanbanLand {
+export interface KanbanProject {
   id: string;
   name: string;
 }
 
 /**
- * Kanban filter bar (T-304, F-06): board title + search input + land filter
- * chips ("Semua Lahan" + one per land). Search filters on the task title.
- * When the user has exactly one land, the "Semua Lahan" chip is redundant
- * (it equals that single land), so it renders as a contextual per-konteks
- * chip labeled with the land's name instead.
+ * Kanban filter bar (T-304/F-06 + T-13): board title + search input + project
+ * filter chips ("Semua Proyek" + one per project). Search filters on the task
+ * title. When the user has exactly one project, the "Semua Proyek" chip is
+ * redundant (it equals that single project), so it renders as a contextual
+ * chip labeled with the project's name instead.
  */
 export function KanbanFilterBar({
   search,
   onSearch,
-  lands,
+  projects,
   filterKey,
   onFilter,
 }: {
   search: string;
   onSearch: (value: string) => void;
-  lands: KanbanLand[];
+  projects: KanbanProject[];
   filterKey: string;
   onFilter: (key: string) => void;
 }) {
-  const singleLand = lands.length === 1 ? lands[0] : null;
+  const singleProject = projects.length === 1 ? projects[0] : null;
   return (
     <div className="sticky top-16 z-30 flex w-full flex-col items-start justify-between gap-4 border-b border-border-color bg-surface-container-lowest/90 px-4 py-4 backdrop-blur-md md:flex-row md:items-center lg:px-8">
       <div className="flex w-full flex-col items-start gap-4 md:w-auto md:flex-row md:items-center">
@@ -53,18 +53,18 @@ export function KanbanFilterBar({
         </div>
       </div>
       <div className="hide-scrollbar flex w-full items-center gap-3 overflow-x-auto pb-2 md:w-auto md:pb-0">
-        {singleLand ? (
+        {singleProject ? (
           <button
             type="button"
-            aria-label={`${STRINGS.dashboard.filterAria}: ${singleLand.name}`}
-            onClick={() => onFilter(singleLand.id)}
-            className={`shrink-0 rounded-md border px-4 py-1.5 font-label text-xs uppercase tracking-widest transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
-              filterKey === singleLand.id
-                ? "border-primary bg-primary text-on-primary hover:bg-inverse-surface"
-                : "border-outline bg-surface-container-low text text-on-surface hover:bg-surface-container"
+            aria-label={`${STRINGS.dashboard.filterAria}: ${singleProject.name}`}
+            onClick={() => onFilter(singleProject.id)}
+            className={`shrink-0 rounded-lg border px-4 py-1.5 font-label text-xs uppercase tracking-widest transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+              filterKey === singleProject.id
+                ? "bg-primary text-on-primary hover:bg-inverse-surface"
+                : "border-outline bg-surface-container-low text-on-surface hover:bg-surface-container"
             }`}
           >
-            {singleLand.name}
+            {singleProject.name}
           </button>
         ) : (
           <>
@@ -72,7 +72,7 @@ export function KanbanFilterBar({
               type="button"
               aria-label={STRINGS.dashboard.filterAria}
               onClick={() => onFilter("semua")}
-              className={`shrink-0 rounded-md px-4 py-1.5 font-label text-xs uppercase tracking-widest transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+              className={`shrink-0 rounded-lg px-4 py-1.5 font-label text-xs uppercase tracking-widest transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
                 filterKey === "semua"
                   ? "border border-primary bg-primary text-on-primary hover:bg-inverse-surface"
                   : "border border-outline bg-surface-container-lowest text-on-surface hover:bg-surface-container"
@@ -80,18 +80,18 @@ export function KanbanFilterBar({
             >
               {STRINGS.dashboard.filterAll}
             </button>
-            {lands.map((land) => (
+            {projects.map((project) => (
               <button
-                key={land.id}
+                key={project.id}
                 type="button"
-                onClick={() => onFilter(land.id)}
-                className={`shrink-0 rounded-md px-4 py-1.5 font-label text-xs uppercase tracking-widest transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
-                  filterKey === land.id
+                onClick={() => onFilter(project.id)}
+                className={`shrink-0 rounded-lg px-4 py-1.5 font-label text-xs uppercase tracking-widest transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+                  filterKey === project.id
                     ? "border border-primary bg-primary text-on-primary hover:bg-inverse-surface"
-                    : "border border-outline bg-surface-container-low text text-on-surface hover:bg-surface-container"
+                    : "border border-outline bg-surface-container-lowest text-on-surface hover:bg-surface-container"
                 }`}
               >
-                {land.name}
+                {project.name}
               </button>
             ))}
           </>

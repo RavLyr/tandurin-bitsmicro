@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
   let query = createServiceClient()
     .from("conversations")
     .select(
-      "id, title, land_id, created_at, updated_at, lands(name), messages(count), last_message:messages(content, role, created_at)"
+      "id, title, land_id, project_id, created_at, updated_at, lands(name), projects(name), messages(count), last_message:messages(content, role, created_at)"
     )
     .eq("user_id", user.id)
     .order("updated_at", { ascending: false })
@@ -70,11 +70,14 @@ export async function GET(request: NextRequest) {
     // supabase-js types embedded relations as arrays without a Database type;
     // PostgREST returns an object for many-to-one — accept both at runtime.
     const land = Array.isArray(row.lands) ? row.lands[0] : row.lands;
+    const project = Array.isArray(row.projects) ? row.projects[0] : row.projects;
     return {
       id: row.id,
       title: row.title,
       land_id: row.land_id,
       land_name: land?.name ?? null,
+      project_id: row.project_id,
+      project_name: project?.name ?? null,
       created_at: row.created_at,
       updated_at: row.updated_at,
       message_count: row.messages?.[0]?.count ?? 0,

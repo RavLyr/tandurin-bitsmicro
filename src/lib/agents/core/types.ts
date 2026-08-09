@@ -13,6 +13,8 @@ export interface ChatTurn {
 
 export interface AgentContext {
   landSummary?: string | null;
+  /** T-024: active project the conversation is linked to (name summary). */
+  projectSummary?: string | null;
 }
 
 /** Legacy tool shape (declaration + executor) kept for backward compat. */
