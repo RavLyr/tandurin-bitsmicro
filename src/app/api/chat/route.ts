@@ -66,7 +66,10 @@ export async function POST(request: NextRequest) {
   // Tasks planned later inherit this land id so the board + land card counts
   // stay consistent (previously chat tasks had land_id = null).
   let landId = body.land_id ?? null;
-  if (!landId && !requestedId) {
+  // Resolve the active land whenever the message doesn't carry one — needed
+  // for follow-up messages in an existing conversation too (project creation
+  // and task planning require a land). Mirrors the landSummary query below.
+  if (!landId) {
     const { data: activeLand } = await service
       .from("lands")
       .select("id")

@@ -143,6 +143,32 @@ export function fallbackSchedule(crop: string): GeneratedTask[] {
   }
 }
 
+/**
+ * Next free position for new tasks on a land: kanban enforces
+ * UNIQUE (user_id, land_id, status, position) across ALL projects, so a new
+ * batch must start after the current max position (23505 otherwise).
+ */
+export async function taskPositionOffset(
+  supabase: SupabaseClient,
+  userId: string,
+  landId: string | null
+): Promise<number> {
+  if (!landId) return 0;
+  try {
+    const { data } = await supabase
+      .from("tasks")
+      .select("position")
+      .eq("user_id", userId)
+      .eq("land_id", landId)
+      .order("position", { ascending: false })
+      .limit(1);
+    const max = (data && data[0]?.position as number | null) ?? null;
+    return typeof max === "number" ? max + 1 : 0;
+  } catch {
+    return 0;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
@@ -221,10 +247,18 @@ export async function runProjectCreator({
 
   const projectCall = functionCalls.find((c) => c.name === "generate_project");
   const project = projectCall ? parseProject(projectCall.output) : null;
+  // The tool takes a single `crop` param (not a `crops` array); fall back to
+  // any legacy `crops` array for forward compat. `crops[0]` feeds the
+  // one-time task generator, so a missing value would relabel tasks as
+  // "Tanaman" — keep the model's crop string first.
+  const rawCrop = projectCall?.args?.crop;
   const rawCrops = projectCall?.args?.crops;
-  const crops = Array.isArray(rawCrops)
-    ? rawCrops.filter((c): c is string => typeof c === "string")
-    : [];
+  const crops = [
+    ...(typeof rawCrop === "string" ? [rawCrop] : []),
+    ...(Array.isArray(rawCrops)
+      ? rawCrops.filter((c): c is string => typeof c === "string")
+      : []),
+  ];
 
   return { text, project, crops };
 }
@@ -373,7 +407,10 @@ async function runProjectCreationFlow({
     }));
   }
 
-  const taskRows = oneTimeTasks.map((t) => ({
+  // Positions must be unique per (user, land, status) across all projects —
+  // start the batch after the current max so previous Kanban rows keep order.
+  const positionStart = await taskPositionOffset(supabase, userId, landId);
+  const taskRows = oneTimeTasks.map((t, index) => ({
     user_id: userId,
     land_id: landId,
     project_id: projectId,
@@ -382,7 +419,7 @@ async function runProjectCreationFlow({
     description: t.description,
     phase: t.phase,
     due_date: t.due_date,
-    position: t.position,
+    position: positionStart + index,
     crop: null,
   }));
   const { error: tasksError } = await supabase.from("tasks").insert(taskRows);
@@ -536,6 +573,7 @@ export async function runOrchestrator({
         position: t.position ?? 0,
       }));
 
+      const positionStart = await taskPositionOffset(supabase, userId, landId);
       const rows = tasks.map((t, index) => ({
         user_id: userId,
         land_id: landId,
@@ -544,7 +582,7 @@ export async function runOrchestrator({
         description: t.description ?? "",
         phase: t.phase,
         due_date: t.due_date,
-        position: t.position ?? index,
+        position: positionStart + index,
         crop: null,
       }));
 
