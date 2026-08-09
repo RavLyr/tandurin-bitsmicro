@@ -106,6 +106,10 @@ export function KanbanBoard() {
 
   useEffect(() => {
     void loadProjects();
+    // Load tasks immediately on mount. The realtime-subscribe callback below
+    // is the only other loader, but a channel that never reaches SUBSCRIBED
+    // (or never fires at all) would leave the board on its skeleton forever.
+    void loadTasks();
   }, [loadTasks, loadProjects]);
 
   useEffect(() => {
